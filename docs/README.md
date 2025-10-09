@@ -23,7 +23,6 @@ Stores user information and authentication details.
 | username | VARCHAR | User’s chosen username |
 | fullName | VARCHAR | User’s full name |
 | email | VARCHAR(255) | User’s email address (unique) |
-| verifyToken | VARCHAR(255) | 
 | password | VARCHAR(255) | Encrypted password |
 | verifiedAt | BOOLEAN | Email verification status |
 | createdAt | TIMESTAMP | Record creation date |

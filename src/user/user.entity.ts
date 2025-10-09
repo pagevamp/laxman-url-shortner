@@ -22,12 +22,6 @@ export class User {
   @Column({ type: 'varchar', length: 255 })
   password: string
 
-  @Column({ type: 'varchar', length: 100 })
-  verifyToken: string
-
-  @Column({ type: 'boolean', default: false })
-  isVerified: boolean
-
   @Column({ type: 'varchar', length: 255, nullable: true })
   verificationToken: string | null
 
