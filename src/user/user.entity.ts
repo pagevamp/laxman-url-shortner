@@ -3,34 +3,31 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-} from 'typeorm'
+} from 'typeorm';
 
 @Entity({ name: 'users' })
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: string
+  id: string;
 
   @Column({ type: 'varchar', length: 255, unique: true })
-  username: string
+  username: string;
 
   @Column({ type: 'varchar', length: 255 })
-  fullName: string
+  fullName: string;
 
   @Column({ type: 'varchar', length: 255, unique: true })
-  email: string
+  email: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  password: string
+  @Column({ type: 'varchar' })
+  password: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  verificationToken: string | null
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  verifiedAt: Date | null;
 
-  @Column({ type: 'timestamp', nullable: true })
-  verifiedAt: Date | null
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  createdAt: Date;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date
-
-  @Column({ type: 'timestamp', nullable: true })
-  lastLoginAt: Date | null
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  lastLoginAt: Date | null;
 }

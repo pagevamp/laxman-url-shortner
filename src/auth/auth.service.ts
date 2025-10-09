@@ -1,47 +1,47 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
-import { UserService } from '../user/user.service'
-import { SignUpUserDto } from './dto/signup-user-dto'
-import { JwtService } from '@nestjs/jwt'
-import { scrypt as _scrypt, randomBytes } from 'crypto'
-import { promisify } from 'util'
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { UserService } from '../user/user.service';
+import { SignUpUserDto } from './dto/signup-user-dto';
+import { JwtService } from '@nestjs/jwt';
 
-const scrypt = promisify(_scrypt)
+import * as bcrypt from 'bcrypt';
+
 @Injectable()
 export class AuthService {
   constructor(
-    private userService: UserService,
-    private jwtService: JwtService,
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService,
   ) {}
 
   private async getHashedPassword(password: string): Promise<string> {
-    const salt = randomBytes(8).toString('hex')
-    const hash = (await scrypt(password, salt, 32)) as Buffer
-    const hashedPassword = salt + '.' + hash.toString('hex')
-    return hashedPassword
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(password, salt);
+    return hashedPassword;
   }
 
   async signUp(
     signUpUserDto: SignUpUserDto,
   ): Promise<{ access_token: string }> {
-    const userByUsername = await this.userService.findOne(
+    const userByUsername = await this.userService.findOneByUsername(
       signUpUserDto.username,
-    )
-    const userByEmail = await this.userService.findOne(signUpUserDto.email)
+    );
     if (userByUsername) {
-      throw new BadRequestException('Username already taken')
+      throw new BadRequestException('Username already taken');
     }
+    const userByEmail = await this.userService.findOneByEmail(
+      signUpUserDto.email,
+    );
     if (userByEmail) {
-      throw new BadRequestException('Email already taken')
+      throw new BadRequestException('Email already taken');
     }
-    const hashedPassword = await this.getHashedPassword(signUpUserDto.password)
-    const { email, fullName, username } = signUpUserDto
+    const hashedPassword = await this.getHashedPassword(signUpUserDto.password);
+    const { email, fullName, username } = signUpUserDto;
     const user = await this.userService.create({
       password: hashedPassword,
       email,
       fullName,
       username,
-    })
-    const payload = { sub: user.id, username: user.username }
-    return { access_token: await this.jwtService.signAsync(payload) }
+    });
+    const payload = { sub: user.id, username: user.username };
+    return { access_token: await this.jwtService.signAsync(payload) };
   }
 }
