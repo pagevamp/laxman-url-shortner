@@ -3,37 +3,40 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-} from 'typeorm';
+} from 'typeorm'
 
 @Entity({ name: 'users' })
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id: string
 
   @Column({ type: 'varchar', length: 255, unique: true })
-  username: string;
+  username: string
 
   @Column({ type: 'varchar', length: 255 })
-  fullName: string;
+  fullName: string
 
   @Column({ type: 'varchar', length: 255, unique: true })
-  email: string;
+  email: string
 
   @Column({ type: 'varchar', length: 255 })
-  password: string;
+  password: string
+
+  @Column({ type: 'varchar', length: 100 })
+  verifyToken: string
 
   @Column({ type: 'boolean', default: false })
-  isVerified: boolean;
+  isVerified: boolean
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  verificationToken: string | null;
+  verificationToken: string | null
 
   @Column({ type: 'timestamp', nullable: true })
-  verifiedAt: Date | null;
+  verifiedAt: Date | null
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
+  createdAt: Date
 
   @Column({ type: 'timestamp', nullable: true })
-  lastLoginAt: Date | null;
+  lastLoginAt: Date | null
 }
