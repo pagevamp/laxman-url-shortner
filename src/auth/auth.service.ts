@@ -12,24 +12,28 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
   ) {}
+
+  private async getHashedPassword(password: string): Promise<string> {
+    const salt = randomBytes(8).toString('hex')
+    const hash = (await scrypt(password, salt, 32)) as Buffer
+    const hashedPassword = salt + '.' + hash.toString('hex')
+    return hashedPassword
+  }
+
   async signUp(
     signUpUserDto: SignUpUserDto,
   ): Promise<{ access_token: string }> {
-    const existingUsernameUser = await this.userService.findOne(
+    const userByUsername = await this.userService.findOne(
       signUpUserDto.username,
     )
-    const existingEmailUser = await this.userService.findOne(
-      signUpUserDto.email,
-    )
-    if (existingUsernameUser) {
-      throw new BadRequestException('User with this username already exist')
+    const userByEmail = await this.userService.findOne(signUpUserDto.email)
+    if (userByUsername) {
+      throw new BadRequestException('Username already taken')
     }
-    if (existingEmailUser) {
-      throw new BadRequestException('User with this email already exist')
+    if (userByEmail) {
+      throw new BadRequestException('Email already taken')
     }
-    const salt = randomBytes(8).toString('hex')
-    const hash = (await scrypt(signUpUserDto.password, salt, 32)) as Buffer
-    const hashedPassword = salt + '.' + hash.toString('hex')
+    const hashedPassword = await this.getHashedPassword(signUpUserDto.password)
     const { email, fullName, username } = signUpUserDto
     const user = await this.userService.create({
       password: hashedPassword,
