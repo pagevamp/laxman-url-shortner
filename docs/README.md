@@ -23,10 +23,11 @@ Stores user information and authentication details.
 | username | VARCHAR | User’s chosen username |
 | fullName | VARCHAR | User’s full name |
 | email | VARCHAR(255) | User’s email address (unique) |
-| password | VARCHAR(255) | Encrypted password |
+| password | Encrypted password |
 | verifiedAt | BOOLEAN | Email verification status |
 | createdAt | TIMESTAMP | Record creation date |
 | updatedAt | TIMESTAMP | Record update date |
+| deletedAt | TIMESTAMP | Record delete date |
 
 **Relations:**
 - One user → many `urls`
@@ -43,7 +44,6 @@ Stores email verification tokens for user account confirmation.
 | id | SERIAL (PK) | Unique record ID |
 | userId | INT (FK) | Linked user |
 | token | VARCHAR(100) | Unique email verification token |
-| isUsed | BOOLEAN | Whether the token has been used |
 | createdAt | TIMESTAMP | Token creation time |
 | expiresAt | TIMESTAMP | Token expiration time |
 | verifiedAt | TIMESTAMP | Time when the user verified their email |
@@ -64,10 +64,9 @@ Stores shortened URLs created by users.
 | shortUrl | VARCHAR(20) | Shortened URL code |
 | expiresAt | TIMESTAMP | Expiration date of the short URL |
 | isActive | BOOLEAN | Whether the URL is active |
-| clickCount | INT | Number of times the URL has been accessed |
-| notifiedAt | TIMESTAMP | Time when owner was notified of expiry |
 | createdAt | TIMESTAMP | Record creation date |
 | updatedAt | TIMESTAMP | Record update date |
+| deletedAt | TIMESTAMP | Record delete date |
 
 **Relations:**
 - One user → many URLs (`users.id < urls.userId`)
@@ -83,39 +82,17 @@ Stores analytics for every time a short URL is accessed.
 |---------|------|--------------|
 | id | SERIAL (PK) | Unique record ID |
 | urlId | INT (FK) | Associated URL |
-| accessedAt | TIMESTAMP | Access time |
+| redirectedAt | TIMESTAMP | Access time |
 | ip | VARCHAR(100) | Visitor’s IP address |
 | country | VARCHAR(10) | Parsed country code |
 | userAgent | TEXT | Full user-agent string |
-| browser | VARCHAR(50) | Extracted browser name |
-| os | VARCHAR(50) | Extracted operating system |
-| device | VARCHAR(50) | Extracted device type |
-| referrer | TEXT | Referring source (if any) |
 
 **Relations:**
 - Many hits → belong to one URL (`urls.id < hits.urlId`)
 
 ---
 
-### 5. 🔔 notifications
-Stores messages and alerts sent to users (e.g., when URLs expire).
 
-| Column | Type | Description |
-|---------|------|--------------|
-| id | SERIAL (PK) | Unique record ID |
-| userId | INT (FK) | Linked user |
-| urlId | INT (FK) | Related URL (optional) |
-| type | VARCHAR(50) | Notification type (e.g., “expiry”, “reminder”) |
-| message | VARCHAR | Message content |
-| is_sent | BOOLEAN | Whether notification has been sent |
-| created_at | TIMESTAMP | When the notification was created |
-| sent_at | TIMESTAMP | When it was actually sent |
-
-**Relations:**
-- One user → many notifications (`users.id < notifications.userId`)
-- One URL → many notifications (`urls.id < notifications.urlId`)
-
----
 
 ## 🔗 Relationship Summary
 
@@ -124,8 +101,6 @@ Stores messages and alerts sent to users (e.g., when URLs expire).
 | users → urls | A user can create multiple URLs |
 | users → email_verifications | A user can have multiple email verification tokens |
 | urls → hits | A shortened URL can be accessed multiple times |
-| urls → notifications | A URL can have multiple related notifications |
-| users → notifications | A user can receive many notifications |
 
 ---
 
@@ -133,7 +108,6 @@ Stores messages and alerts sent to users (e.g., when URLs expire).
 
 - **Email verification** is managed via the `email_verifications` table (supports multiple tokens and expiry handling).  
 - **Rate limiting** and other logic (like URL redirection and expiry) are handled in application middleware.  
-- **Notifications** track expiry alerts and future system notifications.  
 - **Analytics** from the `hits` table allow detailed reporting (browser, OS, device, referrer, etc.).
 
 ---
