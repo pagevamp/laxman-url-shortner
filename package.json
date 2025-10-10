@@ -6,8 +6,8 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "typeorm": "typeorm-ts-node-commonjs -d src/data-source.ts",
-    "migration:generate": "pnpm run typeorm migration:generate",
+    "typeorm": "ts-node --project tsconfig.json -r dotenv/config -r tsconfig-paths/register ./node_modules/typeorm/cli.js --dataSource ./src/data-source.ts",   
+     "migration:generate": "pnpm run typeorm migration:generate",
     "migration:run": "pnpm run typeorm migration:run",
     "migration:revert": "pnpm run typeorm migration:revert",
     "build": "nest build",
