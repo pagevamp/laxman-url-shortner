@@ -14,6 +14,8 @@ The database supports core functionalities such as:
 
 ## 🧩 Entities and Relationships
 
+ER diagram link: `https://dbdiagram.io/d/68e70e16d2b621e422f4d115`
+
 ### 1. 🧑‍💻 users
 Stores user information and authentication details.
 
