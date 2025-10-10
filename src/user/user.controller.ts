@@ -2,28 +2,34 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { SignUpUserDto } from 'src/auth/dto/signup-user-dto';
+import { SignupRequestData } from 'src/auth/dto/signup-user-dto';
 
-@Controller('user')
+@Controller('users')
 export class UserController {
   constructor(private readonly UserService: UserService) {}
-  @Get('users')
+
+  @HttpCode(HttpStatus.OK)
+  @Get()
   async getAllUsers() {
     return this.UserService.findAll();
   }
 
-  @Get('user/:id')
+  @HttpCode(HttpStatus.OK)
+  @Get(':id')
   async getUser(@Param('id', ParseUUIDPipe) id: string) {
-    return this.UserService.findOneById(id);
+    return this.UserService.findOneByField('id', id);
   }
 
-  @Post('user')
-  async createUser(@Body() body: SignUpUserDto) {
+  @HttpCode(HttpStatus.CREATED)
+  @Post()
+  async createUser(@Body() body: SignupRequestData) {
     return this.UserService.create(body);
   }
 }

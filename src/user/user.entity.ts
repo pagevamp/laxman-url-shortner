@@ -22,12 +22,12 @@ export class User {
   @Column({ type: 'varchar' })
   password: string;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: 'timestamp with time zone', nullable: true })
   verifiedAt: Date | null;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: 'timestamp with time zone', nullable: true })
   createdAt: Date;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: 'timestamp with time zone', nullable: true })
   lastLoginAt: Date | null;
 }

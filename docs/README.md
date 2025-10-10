@@ -71,7 +71,6 @@ Stores shortened URLs created by users.
 **Relations:**
 - One user → many URLs (`users.id < urls.userId`)
 - One URL → many hits (`urls.id < hits.urlId`)
-- One URL → many notifications (`urls.id < notifications.urlId`)
 
 ---
 
