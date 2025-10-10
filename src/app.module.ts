@@ -3,6 +3,8 @@ import { AppController } from './app.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { EmailService } from './email/email.service';
+import { EmailModule } from './email/email.module';
 import typeORMConfig from './typeORMConfig';
 
 @Module({
@@ -10,7 +12,9 @@ import typeORMConfig from './typeORMConfig';
     TypeOrmModule.forRoot({ ...typeORMConfig }),
     UserModule,
     AuthModule,
+    EmailModule,
   ],
   controllers: [AppController],
+  providers: [EmailService],
 })
 export class AppModule {}

@@ -1,14 +1,25 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignupRequestData } from './dto/signup-user-dto';
+import { EmailService } from 'src/email/email.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private readonly emailService: EmailService,
+  ) {}
 
   @HttpCode(HttpStatus.OK)
   @Post('sign-up')
-  signUp(@Body() signUpUserDto: SignupRequestData) {
-    return this.authService.signUp(signUpUserDto);
+  async signUp(@Body() signupRequestData: SignupRequestData) {
+    const user = this.authService.signUp(signupRequestData);
+    try {
+      await this.emailService.sendVerificationLink(signupRequestData.email);
+      console.log('email verification sent');
+      return user;
+    } catch (err) {
+      console.log('Failed to send verification' + err);
+    }
   }
 }

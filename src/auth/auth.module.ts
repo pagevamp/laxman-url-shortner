@@ -4,6 +4,7 @@ import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { UserModule } from 'src/user/user.module';
 import { HashService } from './ hash.service';
+import { EmailService } from 'src/email/email.service';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { HashService } from './ hash.service';
       signOptions: { expiresIn: '7d' },
     }),
   ],
-  providers: [AuthService, HashService],
+  providers: [AuthService, HashService, EmailService],
   controllers: [AuthController],
   exports: [AuthService],
 })
