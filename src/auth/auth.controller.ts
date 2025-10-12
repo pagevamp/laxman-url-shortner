@@ -13,13 +13,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('sign-up')
   async signUp(@Body() signupRequestData: SignupRequestData) {
-    const user = this.authService.signUp(signupRequestData);
     try {
+      const user = await this.authService.signUp(signupRequestData);
       await this.emailService.sendVerificationLink(signupRequestData.email);
       console.log('email verification sent');
       return user;
     } catch (err) {
       console.log('Failed to send verification' + err);
+      throw err;
     }
   }
 }
