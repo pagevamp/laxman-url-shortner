@@ -7,9 +7,12 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { SignupRequestData } from 'src/auth/dto/signup-user-dto';
+import { UserGuard } from './user.guards';
+import { UpdateUserRequestData } from './dto/update-user-request-data';
 
 @Controller('users')
 export class UserController {
@@ -31,5 +34,16 @@ export class UserController {
   @Post()
   async createUser(@Body() body: SignupRequestData) {
     return this.UserService.create(body);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post(':id')
+  @UseGuards(UserGuard)
+  async updateUser(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body()
+    body: UpdateUserRequestData,
+  ) {
+    return this.UserService.update(id, body);
   }
 }
