@@ -27,11 +27,11 @@ export class User {
     nullable: true,
     default: null,
   })
-  verifiedAt: Date | null;
+  verifiedAt?: Date | null;
 
-  @CreateDateColumn({ type: 'timestamp with time zone', nullable: true })
+  @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;
 
-  @CreateDateColumn({ type: 'timestamp with time zone', nullable: true })
-  lastLoginAt: Date | null;
+  @Column({ type: 'timestamp with time zone', nullable: true })
+  lastLoginAt?: Date | null;
 }

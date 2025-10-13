@@ -32,7 +32,7 @@ export class AuthController {
   @Post('login')
   async login(@Body() loginRequestData: LoginRequestData) {
     try {
-      await this.authService.login(loginRequestData);
+      return await this.authService.login(loginRequestData);
     } catch (error) {
       console.error(error);
       throw error;

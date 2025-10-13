@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { SignupRequestData } from './dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
-import { HashService } from './hash.service';
+import { CryptoService } from './crypto.service';
 import { LoginRequestData } from './dto/login-user-dto';
 import * as bcrypt from 'bcrypt';
 
@@ -11,7 +11,7 @@ export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
-    private readonly hashService: HashService,
+    private readonly cryptoService: CryptoService,
   ) {}
 
   async signUp(
@@ -36,7 +36,7 @@ export class AuthService {
         throw new BadRequestException('Email already taken');
       }
 
-      const hashedPassword = await this.hashService.hashPassword(
+      const hashedPassword = await this.cryptoService.hashPassword(
         signupRequestData.password,
       );
 
