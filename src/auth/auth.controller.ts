@@ -17,10 +17,13 @@ export class AuthController {
       const user = await this.authService.signUp(signupRequestData);
       await this.emailService.sendVerificationLink(signupRequestData.email);
       console.log('email verification sent');
-      return user;
-    } catch (err) {
-      console.log('Failed to send verification' + err);
-      throw err;
+      return {
+        message: 'Signup succesfull, Verification email sent',
+        user,
+      };
+    } catch (error) {
+      console.log('Failed to send verification' + error);
+      throw error;
     }
   }
 }
