@@ -3,6 +3,8 @@ import { UserService } from '../user/user.service';
 import { SignupRequestData } from './dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
 import { HashService } from './hash.service';
+import { LoginRequestData } from './dto/login-user-dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -13,12 +15,12 @@ export class AuthService {
   ) {}
 
   async signUp(
-    signUpUserDto: SignupRequestData,
+    signupRequestData: SignupRequestData,
   ): Promise<{ access_token: string }> {
     try {
       const userByUsername = await this.userService.findOneByField(
         'username',
-        signUpUserDto.username,
+        signupRequestData.username,
       );
 
       if (userByUsername) {
@@ -27,7 +29,7 @@ export class AuthService {
 
       const userByEmail = await this.userService.findOneByField(
         'email',
-        signUpUserDto.email,
+        signupRequestData.email,
       );
 
       if (userByEmail) {
@@ -35,10 +37,10 @@ export class AuthService {
       }
 
       const hashedPassword = await this.hashService.hashPassword(
-        signUpUserDto.password,
+        signupRequestData.password,
       );
 
-      const { email, fullName, username } = signUpUserDto;
+      const { email, fullName, username } = signupRequestData;
 
       const user = await this.userService.create({
         password: hashedPassword,
@@ -52,6 +54,35 @@ export class AuthService {
       return { access_token: await this.jwtService.signAsync(payload) };
     } catch (error) {
       console.error('Signup Error: ', error);
+      throw error;
+    }
+  }
+
+  async login(
+    loginRequestData: LoginRequestData,
+  ): Promise<{ access_token: string }> {
+    try {
+      const user = await this.userService.findOneByField(
+        'email',
+        loginRequestData.email,
+      );
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      const match = await bcrypt.compare(
+        loginRequestData.password,
+        user.password,
+      );
+      const payload = { sub: user.id, username: user.username };
+
+      if (match) {
+        return { access_token: await this.jwtService.signAsync(payload) };
+      } else {
+        throw new BadRequestException('Invalid email or password');
+      }
+    } catch (error) {
+      console.error(error);
       throw error;
     }
   }

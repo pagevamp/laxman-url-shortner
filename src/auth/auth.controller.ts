@@ -2,6 +2,7 @@ import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignupRequestData } from './dto/signup-user-dto';
 import { EmailService } from 'src/email/email.service';
+import { LoginRequestData } from './dto/login-user-dto';
 
 @Controller('auth')
 export class AuthController {
@@ -23,6 +24,17 @@ export class AuthController {
       };
     } catch (error) {
       console.log('Failed to send verification' + error);
+      throw error;
+    }
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('login')
+  async login(@Body() loginRequestData: LoginRequestData) {
+    try {
+      await this.authService.login(loginRequestData);
+    } catch (error) {
+      console.error(error);
       throw error;
     }
   }
