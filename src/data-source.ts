@@ -1,6 +1,7 @@
 import 'reflect-metadata';
-import { DataSource } from 'typeorm';
-export const AppDataSource = new DataSource({
+import { DataSource, DataSourceOptions } from 'typeorm';
+
+export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432,
@@ -9,6 +10,9 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME || 'postgres',
   synchronize: false,
   logging: true,
-  entities: ['src/entities/*{.ts,.js}'],
-  migrations: ['src/migrations/*.ts'],
-});
+  entities: ['src/**/*.entity.ts'],
+  migrations: ['src/migration/*.ts'],
+};
+
+const AppDataSource = new DataSource(dataSourceOptions);
+export default AppDataSource;

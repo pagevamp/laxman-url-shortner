@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { join } from 'path';
 
 const typeORMConfig = {
   type: 'postgres',
@@ -8,9 +9,10 @@ const typeORMConfig = {
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  entities: [__dirname + '/database/core/**/*.entity{.ts,.js}'],
+  entities: [join(__dirname, '**/*.entity.ts')],
   synchronize: false,
-  migrations: ['src/database/migrations/*-migration.ts'],
+  migrations: [join(__dirname, 'migration/*.ts')],
+  migrationsTableName: 'custom_migration_table',
   logging: Boolean(process.env.DB_LOGGING),
   autoLoadEntities: true,
   cli: {
