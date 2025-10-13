@@ -1,5 +1,7 @@
 import 'reflect-metadata';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { User } from './user/user.entity';
+import { EmailVerification } from './email/email-verification.entity';
 
 const typeORMConfig = {
   type: 'postgres',
@@ -8,14 +10,11 @@ const typeORMConfig = {
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  entities: [__dirname + '/database/core/**/*.entity{.ts,.js}'],
+  entities: [User, EmailVerification],
   synchronize: true,
   migrations: ['src/database/migrations/*-migration.ts'],
   logging: Boolean(process.env.DB_LOGGING),
   autoLoadEntities: true,
-  cli: {
-    migrationsDir: __dirname + './migrations',
-  },
 } as TypeOrmModuleOptions;
 
 export default typeORMConfig;

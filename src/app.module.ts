@@ -4,11 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { EmailModule } from './email/email.module';
-import typeORMConfig from './typeORMConfig';
+import { dataSourceOptions } from './data-source';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({ ...typeORMConfig }),
+    TypeOrmModule.forRoot(dataSourceOptions),
     UserModule,
     AuthModule,
     EmailModule,
