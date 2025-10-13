@@ -45,7 +45,7 @@ export class EmailService {
     };
     const token = this.jwtService.sign(payload, {
       secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
-      expiresIn: process.env.JWT_VERIFICATION_TOKEN_EXPIRATION_TIME,
+      expiresIn: 3600,
     });
 
     const expiresAt = new Date(Date.now() + 3600 * 1000);
@@ -102,13 +102,17 @@ export class EmailService {
         payload.email,
       );
       if (!user) throw new Error('User not found');
+
       user.verifiedAt = new Date();
+
       await this.userService.update(user.id, user);
+
       await this.emailVerificationRepo.delete({ token });
+
       return { message: 'Email verified successfully!' };
     } catch (error) {
       console.error('Verification error:', error);
-      throw new BadRequestException('Invalid or expired token');
+      throw new BadRequestException('Verification failed');
     }
   }
 }
