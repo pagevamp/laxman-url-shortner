@@ -29,7 +29,7 @@ export class User {
   })
   verifiedAt?: Date | null;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: 'timestamp with time zone', name: 'created_at' })
   createdAt: Date;
 
   @Column({ type: 'timestamp with time zone', nullable: true })

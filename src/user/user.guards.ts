@@ -24,19 +24,9 @@ export class UserGuard implements CanActivate {
       throw new UnauthorizedException('Please provide a token');
     }
 
-    try {
-      const authToken = authHeader.replace(/^Bearer\s+/i, '').trim();
-      const decoded = this.userService.validateToken(authToken);
-      request.decodedData = decoded;
-      return true;
-    } catch (error: unknown) {
-      console.log('Auth error:', error);
-
-      if (error instanceof Error) {
-        throw new UnauthorizedException(error.message);
-      }
-
-      throw new UnauthorizedException('Session expired! Please sign in');
-    }
+    const authToken = authHeader.replace(/^Bearer\s+/i, '').trim();
+    const decoded = this.userService.validateToken(authToken);
+    request.decodedData = decoded;
+    return true;
   }
 }

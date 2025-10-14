@@ -72,8 +72,10 @@ export class EmailService {
         message: 'Verification email sent Successfully',
       };
     } catch (error) {
-      console.error('Failed to send verification email', error);
-      throw new Error('Failed sending email');
+      throw new BadRequestException({
+        message: 'Something went while sending verification email',
+        error: (error as Error)?.message,
+      });
     }
   }
 
@@ -107,8 +109,10 @@ export class EmailService {
       await this.emailVerificationRepo.delete({ token });
       return { message: 'Email verified successfully!' };
     } catch (error) {
-      console.error('Verification error:', error);
-      throw new BadRequestException('Invalid or expired token');
+      throw new BadRequestException({
+        message: 'Something went wrong during email verification',
+        error: (error as Error)?.message,
+      });
     }
   }
 }

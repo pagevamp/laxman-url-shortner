@@ -14,28 +14,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('sign-up')
   async signUp(@Body() signupRequestData: SignupRequestData) {
-    try {
-      const user = await this.authService.signUp(signupRequestData);
-      await this.emailService.sendVerificationLink(signupRequestData.email);
-      console.log('email verification sent');
-      return {
-        message: 'Signup succesfull, Verification email sent',
-        user,
-      };
-    } catch (error) {
-      console.log('Failed to send verification' + error);
-      throw error;
-    }
+    const user = await this.authService.signUp(signupRequestData);
+    await this.emailService.sendVerificationLink(signupRequestData.email);
+    return {
+      message: 'Signup succesfull, Verification email sent',
+      user,
+    };
   }
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(@Body() loginRequestData: LoginRequestData) {
-    try {
-      return await this.authService.login(loginRequestData);
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
+    return await this.authService.login(loginRequestData);
   }
 }
