@@ -154,7 +154,7 @@ export class AuthService {
 
   async login(
     loginRequestData: LoginRequestData,
-  ): Promise<{ access_token: string }> {
+  ): Promise<{ accessToken: string }> {
     try {
       const user = await this.userRepository.findOne({
         where: {
@@ -172,13 +172,15 @@ export class AuthService {
       const payload = { sub: user.id, username: user.username };
 
       if (match) {
-        return { access_token: await this.jwtService.signAsync(payload) };
+        return { accessToken: await this.jwtService.signAsync(payload) };
       } else {
         throw new BadRequestException('Invalid email or password');
       }
     } catch (error) {
-      console.error(error);
-      throw error;
+      throw new BadRequestException({
+        message: 'Something went wrong during login',
+        error: (error as Error)?.message,
+      });
     }
   }
 }
