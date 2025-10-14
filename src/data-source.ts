@@ -1,6 +1,6 @@
 import 'reflect-metadata';
-import { DataSource, DataSourceOptions } from 'typeorm';
-export const dataSourceOptions = {
+import { DataSource } from 'typeorm';
+const dataSource = new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT) || 5432,
@@ -8,9 +8,8 @@ export const dataSourceOptions = {
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   logging: true,
-  entities: ['./dist/**/*.entity.js'],
-  migrations: ['dist/src/migrations/*.js'],
-} as DataSourceOptions;
+  entities: [__dirname + '/**/*.entity{.js,.ts}'],
+  migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
+});
 
-const dataSource = new DataSource(dataSourceOptions);
 export default dataSource;

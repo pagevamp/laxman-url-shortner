@@ -45,7 +45,7 @@ export class EmailService {
     };
     const token = this.jwtService.sign(payload, {
       secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
-      expiresIn: process.env.JWT_VERIFICATION_TOKEN_EXPIRATION_TIME,
+      expiresIn: 3600,
     });
 
     const expiresAt = new Date(Date.now() + 3600 * 1000);
