@@ -3,6 +3,7 @@ import { UserService } from '../user/user.service';
 import { SignupRequestData } from './dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
 import { HashService } from './hash.service';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -10,11 +11,12 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly hashService: HashService,
+    private readonly emailService: EmailService,
   ) {}
 
   async signUp(
     signUpUserDto: SignupRequestData,
-  ): Promise<{ access_token: string }> {
+  ): Promise<{ accessToken: string }> {
     try {
       const userByUsername = await this.userService.findOneByField(
         'username',
@@ -47,9 +49,16 @@ export class AuthService {
         username,
       });
 
+      try {
+        await this.emailService.sendVerificationLink(email);
+        console.log('Verification email sent to:', email);
+      } catch (error) {
+        console.error('Failed to send verification email:', error);
+      }
+
       const payload = { sub: user.id, username: user.username };
 
-      return { access_token: await this.jwtService.signAsync(payload) };
+      return { accessToken: await this.jwtService.signAsync(payload) };
     } catch (error) {
       console.error('Signup Error: ', error);
       throw error;
