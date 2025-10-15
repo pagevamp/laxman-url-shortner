@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { SignupRequestData } from './dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
+import { EmailService } from 'src/email/email.service';
 import { CryptoService } from './crypto.service';
 import { LoginRequestData } from './dto/login-user-dto';
 import * as bcrypt from 'bcrypt';
@@ -11,12 +12,13 @@ export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
     private readonly cryptoService: CryptoService,
   ) {}
 
   async signUp(
     signupRequestData: SignupRequestData,
-  ): Promise<{ access_token: string }> {
+  ): Promise<{ accessToken: string }> {
     try {
       const userByUsername = await this.userService.findOneByField(
         'username',
@@ -49,18 +51,27 @@ export class AuthService {
         username,
       });
 
+      try {
+        await this.emailService.sendVerificationLink(email);
+        console.log('Verification email sent to:', email);
+      } catch (error) {
+        console.error('Failed to send verification email:', error);
+      }
+
       const payload = { sub: user.id, username: user.username };
 
-      return { access_token: await this.jwtService.signAsync(payload) };
+      return { accessToken: await this.jwtService.signAsync(payload) };
     } catch (error) {
-      console.error('Signup Error: ', error);
-      throw error;
+      throw new BadRequestException({
+        message: 'Something went wrong during signup',
+        error: (error as Error)?.message,
+      });
     }
   }
 
   async login(
     loginRequestData: LoginRequestData,
-  ): Promise<{ access_token: string }> {
+  ): Promise<{ accessToken: string }> {
     try {
       const user = await this.userService.findOneByField(
         'email',
@@ -77,13 +88,15 @@ export class AuthService {
       const payload = { sub: user.id, username: user.username };
 
       if (match) {
-        return { access_token: await this.jwtService.signAsync(payload) };
+        return { accessToken: await this.jwtService.signAsync(payload) };
       } else {
         throw new BadRequestException('Invalid email or password');
       }
     } catch (error) {
-      console.error(error);
-      throw error;
+      throw new BadRequestException({
+        message: 'Something went wrong during login',
+        error: (error as Error)?.message,
+      });
     }
   }
 }

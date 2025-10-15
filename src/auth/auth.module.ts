@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { UserModule } from 'src/user/user.module';
-import { HashService } from './crypto.service';
+import { CryptoService } from './crypto.service';
 import { EmailModule } from 'src/email/email.module';
 
 @Module({
@@ -16,7 +16,7 @@ import { EmailModule } from 'src/email/email.module';
       signOptions: { expiresIn: '7d' },
     }),
   ],
-  providers: [AuthService, HashService],
+  providers: [AuthService, CryptoService],
   controllers: [AuthController],
   exports: [AuthService],
 })
