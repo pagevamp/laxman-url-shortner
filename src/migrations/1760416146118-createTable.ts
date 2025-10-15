@@ -1,67 +1,22 @@
-import { MigrationInterface, QueryRunner, Table } from 'typeorm';
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class CreateUsersTable1760500000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.createTable(
-      new Table({
-        name: 'users',
-        columns: [
-          {
-            name: 'id',
-            type: 'uuid',
-            isPrimary: true,
-            isGenerated: true,
-            generationStrategy: 'uuid',
-          },
-          {
-            name: 'username',
-            type: 'varchar',
-            length: '255',
-            isUnique: true,
-            isNullable: false,
-          },
-          {
-            name: 'full_name',
-            type: 'varchar',
-            length: '255',
-            isNullable: false,
-          },
-          {
-            name: 'email',
-            type: 'varchar',
-            length: '255',
-            isUnique: true,
-            isNullable: false,
-          },
-          {
-            name: 'password',
-            type: 'varchar',
-            isNullable: false,
-          },
-          {
-            name: 'verified_at',
-            type: 'timestamp with time zone',
-            isNullable: true,
-            default: null,
-          },
-          {
-            name: 'created_at',
-            type: 'timestamp with time zone',
-            default: 'now()',
-          },
-          {
-            name: 'last_login_at',
-            type: 'timestamp with time zone',
-            isNullable: true,
-            default: null,
-          },
-        ],
-      }),
-      true,
-    );
+    await queryRunner.query(`
+      CREATE TABLE "users" (
+        "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        "username" varchar(255) NOT NULL UNIQUE,
+        "full_name" varchar(255) NOT NULL,
+        "email" varchar(255) NOT NULL UNIQUE,
+        "password" varchar NOT NULL,
+        "verified_at" timestamp with time zone DEFAULT NULL,
+        "created_at" timestamp with time zone DEFAULT now(),
+        "last_login_at" timestamp with time zone DEFAULT NULL
+      );
+    `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('users');
+    await queryRunner.query(`DROP TABLE "users";`);
   }
 }

@@ -101,9 +101,7 @@ export class EmailService {
       );
       if (!user) throw new Error('User not found');
 
-      user.verifiedAt = new Date();
-
-      await this.userService.update(user.id, user);
+      await this.userService.update(user.id, { verifiedAt: new Date() });
 
       await this.emailVerificationRepo.delete({ token });
 
