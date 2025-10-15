@@ -37,6 +37,13 @@ export class EmailService {
     if (!user) {
       throw new BadRequestException('User not found');
     }
+    const existingVerificationEmail = await this.emailVerificationRepo.findOne({
+      where: { userId: user.id },
+    });
+
+    if (existingVerificationEmail) {
+      await this.emailVerificationRepo.delete(existingVerificationEmail.id);
+    }
 
     if (user.verifiedAt !== null) {
       throw new BadRequestException('User is already verified');
