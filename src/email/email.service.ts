@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EmailVerificationPayload } from './email.interface';
 import { EmailMessages } from './email.messages';
+import { SendVerificationRequestData } from './dto/send-verification-request-data';
 @Injectable()
 export class EmailService {
   private nodemailerTransport: Mail;
@@ -31,39 +32,42 @@ export class EmailService {
     return this.nodemailerTransport.sendMail(options);
   }
 
-  async sendVerificationLink(email: string) {
-    const user = await this.userService.findOneByField('email', email);
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    if (user.verifiedAt !== null) {
-      throw new BadRequestException('User is already verified');
-    }
-
-    const payload: EmailVerificationPayload = {
-      email,
-    };
-    const token = this.jwtService.sign(payload, {
-      secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
-      expiresIn: 3600,
-    });
-
-    const expiresAt = new Date(Date.now() + 3600 * 1000);
-
-    const emailVerification = this.emailVerificationRepo.create({
-      userId: user.id,
-      token,
-      expiresAt,
-    });
-
-    await this.emailVerificationRepo.save(emailVerification);
-
-    const url = `${process.env.EMAIL_CONFIRMATION_URL}?token=${token}`;
-
-    const text = `Welcome to the application. To confirm the email address, click here: ${url}`;
-
+  async sendVerificationLink(
+    sendVerificationRequestData: SendVerificationRequestData,
+  ) {
     try {
+      const { email } = sendVerificationRequestData;
+      if (!email) throw new BadRequestException('Email is required');
+      const user = await this.userService.findOneByField('email', email);
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      if (user.verifiedAt !== null) {
+        throw new BadRequestException('User is already verified');
+      }
+      const payload: EmailVerificationPayload = {
+        email,
+      };
+      const token = this.jwtService.sign(payload, {
+        secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
+        expiresIn: 3600,
+      });
+      console.log('the token and email is: ', token, email);
+      const expiresAt = new Date(Date.now() + 3600 * 1000);
+
+      const emailVerification = this.emailVerificationRepo.create({
+        userId: user.id,
+        token,
+        expiresAt,
+      });
+
+      await this.emailVerificationRepo.save(emailVerification);
+
+      const url = `${process.env.EMAIL_CONFIRMATION_URL}?token=${token}`;
+
+      const text = `Welcome to the application. To confirm the email address, click here: ${url}`;
+
       await this.sendMail({
         to: email,
         subject: 'Email confirmation',
@@ -79,6 +83,8 @@ export class EmailService {
   }
 
   async verify(token: string) {
+    if (!token) throw new BadRequestException('Token is required');
+
     try {
       const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
         secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,

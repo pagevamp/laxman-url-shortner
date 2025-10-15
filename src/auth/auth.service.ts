@@ -37,7 +37,6 @@ export class AuthService {
       if (userByEmail) {
         throw new BadRequestException('Email already taken');
       }
-
       const hashedPassword = await this.cryptoService.hashPassword(
         signupRequestData.password,
       );
@@ -52,7 +51,7 @@ export class AuthService {
       });
 
       try {
-        await this.emailService.sendVerificationLink(email);
+        await this.emailService.sendVerificationLink({ email });
         console.log('Verification email sent to:', email);
       } catch (error) {
         console.error('Failed to send verification email:', error);
@@ -63,8 +62,7 @@ export class AuthService {
       return { accessToken: await this.jwtService.signAsync(payload) };
     } catch (error) {
       throw new BadRequestException({
-        message: 'Something went wrong during signup',
-        error: (error as Error)?.message,
+        message: (error as Error)?.message,
       });
     }
   }
