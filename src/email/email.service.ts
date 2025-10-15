@@ -7,6 +7,8 @@ import { EmailVerification } from './email-verification.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EmailVerificationPayload } from './email.interface';
+import { EmailMessages } from './email.messages';
+
 @Injectable()
 export class EmailService {
   private nodemailerTransport: Mail;
@@ -69,13 +71,11 @@ export class EmailService {
         text,
       });
       return {
-        message: 'Verification email sent Successfully',
+        message: EmailMessages.emailSendSuccess,
       };
     } catch (error) {
-      throw new BadRequestException({
-        message: 'Something went while sending verification email',
-        error: (error as Error)?.message,
-      });
+      console.error('Failed to send verification email', error);
+      throw new Error(EmailMessages.emailSendFailed);
     }
   }
 
@@ -85,13 +85,9 @@ export class EmailService {
         secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
       });
 
-      const record = await this.emailVerificationRepo.findOne({
-        where: { token },
+      const record = await this.emailVerificationRepo.findOneByOrFail({
+        token,
       });
-
-      if (!record) {
-        throw new BadRequestException('Invalid or expired token');
-      }
 
       if (record.expiresAt < new Date()) {
         throw new BadRequestException('Token has expired');
@@ -104,15 +100,17 @@ export class EmailService {
         payload.email,
       );
       if (!user) throw new Error('User not found');
+
       user.verifiedAt = new Date();
+
       await this.userService.update(user.id, user);
+
       await this.emailVerificationRepo.delete({ token });
-      return { message: 'Email verified successfully!' };
+
+      return { message: EmailMessages.emailVerifySuccess };
     } catch (error) {
-      throw new BadRequestException({
-        message: 'Something went wrong during email verification',
-        error: (error as Error)?.message,
-      });
+      console.error('Verification error:', error);
+      throw new BadRequestException(EmailMessages.emailVerifyFailed);
     }
   }
 }

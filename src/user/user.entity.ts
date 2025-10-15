@@ -41,5 +41,5 @@ export class User {
     nullable: true,
     name: 'last_login_at',
   })
-  lastLoginAt: Date | null;
+  lastLoginAt?: Date | null;
 }
