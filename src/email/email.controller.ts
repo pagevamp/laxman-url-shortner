@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -14,6 +13,7 @@ import { UserService } from 'src/user/user.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EmailVerification } from './email-verification.entity';
 import { Repository } from 'typeorm';
+import { SendVerificationRequestData } from './dto/send-verification-request-data';
 
 @Controller('email')
 export class EmailController {
@@ -27,15 +27,13 @@ export class EmailController {
 
   @HttpCode(HttpStatus.ACCEPTED)
   @Post('resend-verification')
-  async reSendVerification(@Body('email') email: string) {
-    if (!email) throw new BadRequestException('Email is required');
-    return await this.emailService.sendVerificationLink(email);
+  async reSendVerification(@Body() body: SendVerificationRequestData) {
+    return await this.emailService.sendVerificationLink(body);
   }
 
   @HttpCode(HttpStatus.OK)
   @Get('verify-email')
   async verifyEmail(@Query('token') token: string) {
-    if (!token) throw new BadRequestException('Token is required');
     return await this.emailService.verify(token);
   }
 }
