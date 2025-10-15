@@ -8,7 +8,6 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EmailVerificationPayload } from './email.interface';
 import { EmailMessages } from './email.messages';
-import { Throttle } from '@nestjs/throttler';
 @Injectable()
 export class EmailService {
   private nodemailerTransport: Mail;
@@ -32,7 +31,6 @@ export class EmailService {
     return this.nodemailerTransport.sendMail(options);
   }
 
-  @Throttle({ default: { limit: 2, ttl: 300000 } })
   async sendVerificationLink(email: string) {
     const user = await this.userService.findOneByField('email', email);
     if (!user) {
@@ -80,7 +78,6 @@ export class EmailService {
     }
   }
 
-  @Throttle({ default: { limit: 10, ttl: 300000 } })
   async verify(token: string) {
     try {
       const payload = this.jwtService.verify<EmailVerificationPayload>(token, {

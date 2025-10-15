@@ -10,7 +10,6 @@ import { Repository } from 'typeorm';
 import { SignupRequestData } from 'src/auth/dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './types/JwtPayload';
-import { Throttle } from '@nestjs/throttler';
 
 @Injectable()
 export class UserService {
@@ -73,7 +72,6 @@ export class UserService {
     }
   }
 
-  @Throttle({ default: { limit: 20, ttl: 300000 } })
   async update(userId: string, updateData: Partial<User>): Promise<User> {
     if (!userId) {
       throw new BadRequestException('User ID is required');
