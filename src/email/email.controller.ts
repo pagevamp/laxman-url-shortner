@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Post,
   Query,
 } from '@nestjs/common';
@@ -23,13 +25,14 @@ export class EmailController {
     private readonly emailVerificationRepo: Repository<EmailVerification>,
   ) {}
 
+  @HttpCode(HttpStatus.ACCEPTED)
   @Post('resend-verification')
   async reSendVerification(@Body('email') email: string) {
     if (!email) throw new BadRequestException('Email is required');
-
     return await this.emailService.sendVerificationLink(email);
   }
 
+  @HttpCode(HttpStatus.OK)
   @Get('verify-email')
   async verifyEmail(@Query('token') token: string) {
     if (!token) throw new BadRequestException('Token is required');
