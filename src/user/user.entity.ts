@@ -8,19 +8,19 @@ import {
 @Entity({ name: 'users' })
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  readonly id: string;
 
   @Column({ type: 'varchar', length: 255, unique: true })
-  username: string;
+  readonly username: string;
 
   @Column({ type: 'varchar', length: 255, name: 'full_name' })
-  fullName: string;
+  readonly fullName: string;
 
   @Column({ type: 'varchar', length: 255, unique: true })
-  email: string;
+  readonly email: string;
 
   @Column({ type: 'varchar' })
-  password: string;
+  readonly password: string;
 
   @Column({
     type: 'timestamp with time zone',
@@ -28,18 +28,18 @@ export class User {
     default: null,
     name: 'verified_at',
   })
-  verifiedAt?: Date | null;
+  readonly verifiedAt?: Date | null;
 
   @CreateDateColumn({
     type: 'timestamp with time zone',
     name: 'created_at',
   })
-  createdAt: Date;
+  readonly createdAt: Date;
 
   @Column({
     type: 'timestamp with time zone',
     nullable: true,
     name: 'last_login_at',
   })
-  lastLoginAt?: Date | null;
+  readonly lastLoginAt?: Date | null;
 }

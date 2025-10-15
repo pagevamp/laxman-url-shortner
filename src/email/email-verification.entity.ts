@@ -11,26 +11,26 @@ import {
 @Entity('email_verifications')
 export class EmailVerification {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  readonly id: string;
 
   @Column({ name: 'user_id' })
-  userId: string;
+  readonly userId: string;
 
   @OneToOne(() => User, (user) => user.verifiedAt, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  readonly user: User;
 
   @Column({ length: 255 })
-  token: string;
+  readonly token: string;
 
   @CreateDateColumn({
     type: 'timestamp with time zone',
     name: 'created_at',
   })
-  createdAt: Date;
+  readonly createdAt: Date;
 
   @Column({ type: 'timestamp with time zone', name: 'expires_at' })
-  expiresAt: Date;
+  readonly expiresAt: Date;
 }
