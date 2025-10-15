@@ -46,6 +46,16 @@ export class EmailService {
       if (user.verifiedAt !== null) {
         throw new BadRequestException('User is already verified');
       }
+
+      const existingVerificationEmail =
+        await this.emailVerificationRepo.findOne({
+          where: { userId: user.id },
+        });
+
+      if (existingVerificationEmail) {
+        await this.emailVerificationRepo.delete(existingVerificationEmail.id);
+      }
+
       const payload: EmailVerificationPayload = {
         email,
       };
@@ -53,7 +63,6 @@ export class EmailService {
         secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
         expiresIn: 3600,
       });
-      console.log('the token and email is: ', token, email);
       const expiresAt = new Date(Date.now() + 3600 * 1000);
 
       const emailVerification = this.emailVerificationRepo.create({
@@ -83,9 +92,9 @@ export class EmailService {
   }
 
   async verify(token: string) {
-    if (!token) throw new BadRequestException('Token is required');
-
     try {
+      console.log('the token here is:', token);
+      if (!token) throw new BadRequestException('Token is required');
       const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
         secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
       });
