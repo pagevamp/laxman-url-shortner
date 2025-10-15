@@ -93,7 +93,6 @@ export class EmailService {
 
   async verify(token: string) {
     try {
-      console.log('the token here is:', token);
       if (!token) throw new BadRequestException('Token is required');
       const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
         secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
