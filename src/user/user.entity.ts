@@ -28,7 +28,7 @@ export class User {
     default: null,
     name: 'verified_at',
   })
-  verifiedAt: Date | null;
+  verifiedAt?: Date | null;
 
   @CreateDateColumn({
     type: 'timestamp with time zone',
@@ -41,5 +41,5 @@ export class User {
     nullable: true,
     name: 'last_login_at',
   })
-  lastLoginAt: Date | null;
+  lastLoginAt?: Date | null;
 }
