@@ -5,12 +5,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-import { UserService } from './user.service';
-import { RequestWithUser } from './types/RequestWithUser';
+import { AuthService } from './auth.service';
+import { RequestWithUser } from '../types/RequestWithUser';
 
 @Injectable()
-export class UserGuard implements CanActivate {
-  constructor(private readonly userService: UserService) {}
+export class AuthGuard implements CanActivate {
+  constructor(private readonly authService: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
@@ -21,9 +21,8 @@ export class UserGuard implements CanActivate {
     }
 
     const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-
     try {
-      const decoded = await this.userService.validateToken(token);
+      const decoded = await this.authService.validateToken(token);
       request.decodedData = decoded;
       return true;
     } catch (err) {

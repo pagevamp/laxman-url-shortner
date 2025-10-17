@@ -2,14 +2,12 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './user.entity';
 import { Repository } from 'typeorm';
 import { SignupRequestData } from 'src/auth/dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
-import { JwtPayload } from './types/JwtPayload';
 
 @Injectable()
 export class UserService {
@@ -18,18 +16,6 @@ export class UserService {
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
   ) {}
-
-  async validateToken(token: string): Promise<JwtPayload> {
-    try {
-      const decoded = await this.jwtService.verifyAsync<JwtPayload>(token, {
-        secret: process.env.JWT_SECRET,
-      });
-      return decoded;
-    } catch (error) {
-      console.error('Token validation error:', error);
-      throw new UnauthorizedException('Invalid or expired token');
-    }
-  }
 
   async findAll(): Promise<User[]> {
     try {

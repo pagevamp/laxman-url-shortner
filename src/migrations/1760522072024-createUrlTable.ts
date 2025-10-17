@@ -6,8 +6,8 @@ export class CreateUrlTable1760522072024 implements MigrationInterface {
             CREATE TABLE "urls" (
             "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
             "user_id" uuid NOT NULL,
-            "original_url" varchar (2048) NOT NULL,
-            "short_url" varchar (255) NOT NULL UNIQUE,
+            "long_code" varchar (2048) NOT NULL,
+            "short_code" varchar (255) NOT NULL UNIQUE,
             "is_active" boolean DEFAULT true,
             "created_at" timestamp with time zone DEFAULT now(),
             "deleted_at" timestamp with time zone DEFAULT NULL,

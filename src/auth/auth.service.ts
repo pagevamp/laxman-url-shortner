@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { SignupRequestData } from './dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
@@ -6,6 +10,7 @@ import { EmailService } from 'src/email/email.service';
 import { CryptoService } from './crypto.service';
 import { LoginRequestData } from './dto/login-user-dto';
 import * as bcrypt from 'bcrypt';
+import { JwtPayload } from '../types/JwtPayload';
 
 @Injectable()
 export class AuthService {
@@ -95,6 +100,18 @@ export class AuthService {
         message: 'Something went wrong during login',
         error: (error as Error)?.message,
       });
+    }
+  }
+
+  async validateToken(token: string): Promise<JwtPayload> {
+    try {
+      const decoded = await this.jwtService.verifyAsync<JwtPayload>(token, {
+        secret: process.env.JWT_SECRET,
+      });
+      return decoded;
+    } catch (error) {
+      console.error('Token validation error:', error);
+      throw new UnauthorizedException('Invalid or expired token');
     }
   }
 }
