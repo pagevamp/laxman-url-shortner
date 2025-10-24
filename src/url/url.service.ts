@@ -7,7 +7,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Url } from './url.entity';
 import { Repository } from 'typeorm';
 import { CreateUrlRequestData } from './dto/create-url-request-data';
-import { CodeGenerator, decrypt, encrypt } from './utils/crypto-helper';
+import {
+  CodeGenerator,
+  decrypt,
+  encrypt,
+  hashString,
+} from './utils/crypto-helper';
 import { UserService } from '../user/user.service';
 @Injectable()
 export class UrlService {
@@ -29,6 +34,15 @@ export class UrlService {
       if (!createUrlRequestData.originalUrl) {
         throw new BadRequestException('Missing required fields');
       }
+      const hashUrl = hashString(createUrlRequestData.originalUrl);
+
+      const existingUrl = await this.urlRepository.findOne({
+        where: { originalUrl: hashUrl },
+      });
+
+      if (existingUrl) {
+        throw new BadRequestException('short url for this URL already exists');
+      }
       const shortCode = CodeGenerator();
       const encryptedUrl = encrypt(createUrlRequestData.originalUrl);
       const url = this.urlRepository.create({
@@ -36,6 +50,7 @@ export class UrlService {
         shortCode: shortCode,
         longCode: encryptedUrl,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        originalUrl: hashUrl,
       });
       return await this.urlRepository.save(url);
     } catch (error) {

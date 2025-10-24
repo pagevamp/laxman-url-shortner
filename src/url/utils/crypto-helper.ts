@@ -1,10 +1,10 @@
 import * as crypto from 'crypto';
-const key = crypto.randomBytes(32);
-
+const key = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
 export const encrypt = (text: string) => {
   const algorithm = 'aes-256-cbc';
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(algorithm, key, iv);
+  console.log('HEX KEY:       ', key.toString('hex'));
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return iv.toString('hex') + ':' + encrypted;
@@ -29,3 +29,7 @@ export const CodeGenerator = (): string => {
   }
   return code;
 };
+
+export function hashString(text: string): string {
+  return crypto.createHash('sha256').update(text).digest('hex');
+}

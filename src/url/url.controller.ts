@@ -33,13 +33,7 @@ export class UrlController {
     const userId = userData.sub;
     return await this.urlService.create(userId, body);
   }
-
-  // @HttpCode(HttpStatus.OK)
-  // @Get('long-code')
-  // async longUrl(@Query('shortCode') shortCode: string) {
-  //   return await this.urlService.getLongUrl(shortCode);
-  // }
-
+  // @UseGuards(AuthGuard)
   @Get(':shortCode')
   @Redirect()
   async redirect(@Param('shortCode') shortCode: string) {

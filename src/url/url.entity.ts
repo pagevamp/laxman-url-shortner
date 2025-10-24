@@ -26,6 +26,9 @@ export class Url {
   @Column({ type: 'boolean', default: true, name: 'is_active' })
   readonly isActive: boolean;
 
+  @Column({ type: 'varchar', length: 64, unique: true, name: 'original_url' })
+  readonly originalUrl: string;
+
   @Column({
     type: 'timestamp with time zone',
     nullable: true,
