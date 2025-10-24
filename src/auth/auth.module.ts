@@ -2,14 +2,16 @@ import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
-import { UserModule } from 'src/user/user.module';
 import { CryptoService } from './crypto.service';
 import { EmailModule } from 'src/email/email.module';
 import { AuthGuard } from './auth.guard';
+import { EmailVerification } from './email-verification.entity';
+import { User } from 'src/user/user.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
-    UserModule,
+    TypeOrmModule.forFeature([User, EmailVerification]),
     EmailModule,
     JwtModule.register({
       global: true,
