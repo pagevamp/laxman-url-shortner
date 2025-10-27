@@ -146,8 +146,7 @@ export class AuthService {
       return { message: EmailMessages.emailVerifySuccess };
     } catch (error) {
       throw new BadRequestException({
-        message: 'Something went wrong during signup',
-        error: (error as Error)?.message,
+        message: (error as Error)?.message,
       });
     }
   }
