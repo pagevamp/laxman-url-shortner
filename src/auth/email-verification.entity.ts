@@ -16,7 +16,7 @@ export class EmailVerification {
   @Column({ name: 'user_id' })
   userId: string;
 
-  @OneToOne(() => User, (user) => user.verifiedAt, {
+  @OneToOne(() => User, (user) => user.id, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'user_id' })
