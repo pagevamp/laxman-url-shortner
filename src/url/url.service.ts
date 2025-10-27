@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Url } from './url.entity';
@@ -14,6 +15,7 @@ import {
   hashString,
 } from './utils/crypto-helper';
 import { UserService } from '../user/user.service';
+import { GetUrlRequestData } from './dto/get-urls-request-data';
 @Injectable()
 export class UrlService {
   constructor(
@@ -46,9 +48,10 @@ export class UrlService {
       const shortCode = CodeGenerator();
       const encryptedUrl = encrypt(createUrlRequestData.originalUrl);
       const url = this.urlRepository.create({
+        title: createUrlRequestData.title,
         userId: userId,
         shortCode: shortCode,
-        longCode: encryptedUrl,
+        encryptedUrl: encryptedUrl,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         originalUrl: hashUrl,
       });
@@ -73,8 +76,76 @@ export class UrlService {
       throw new NotFoundException('This URL has expired');
     }
 
-    const decryptedUrl = decrypt(url.longCode);
-
+    const decryptedUrl = decrypt(url.encryptedUrl);
+    console.log('the url is', decryptedUrl);
     return { longCode: decryptedUrl };
+  }
+
+  async getAll(userId: string): Promise<GetUrlRequestData[]> {
+    const urls = (await this.urlRepository.find({
+      where: { userId: userId },
+      select: ['title', 'shortCode', 'expiresAt'],
+    })) as GetUrlRequestData[];
+    const result = urls.map((item) => ({
+      ...item,
+      shortCode: `${process.env.REDIRECT_BASE_URL}${item.shortCode}`,
+    }));
+    return result;
+  }
+
+  async update(
+    userId: string,
+    urlId: string,
+    updateData: Partial<Url>,
+  ): Promise<Url> {
+    if (!urlId) {
+      throw new BadRequestException('URL id is required');
+    }
+
+    try {
+      const existingUrl = await this.urlRepository.findOneBy({ id: urlId });
+      if (!existingUrl) {
+        throw new NotFoundException(`Url with ID ${urlId} not found`);
+      }
+
+      if (existingUrl.userId !== userId) {
+        throw new UnauthorizedException('You are not authorized');
+      }
+
+      await this.urlRepository.update(urlId, updateData);
+
+      return await this.urlRepository.findOneByOrFail({ id: urlId });
+    } catch (error) {
+      console.error(`Error updating url ${urlId}:`, error);
+
+      if (error instanceof NotFoundException) throw error;
+
+      throw new BadRequestException('Failed to update url');
+    }
+  }
+
+  async delete(userId: string, urlId: string): Promise<void> {
+    if (!urlId) {
+      throw new BadRequestException('URL id is required');
+    }
+    try {
+      const existingUrl = await this.urlRepository.findOneBy({ id: urlId });
+      if (!existingUrl) {
+        throw new NotFoundException(`Url with ID ${urlId} not found`);
+      }
+
+      if (existingUrl.userId !== userId) {
+        throw new UnauthorizedException('You are not authorized');
+      }
+
+      const deletedUrl = await this.urlRepository.delete({ id: urlId });
+      if (deletedUrl.affected === 0) {
+        throw new NotFoundException('URL not found');
+      }
+    } catch (error) {
+      console.error(`Error updating url ${urlId}:`, error);
+      if (error instanceof NotFoundException) throw error;
+      throw new BadRequestException('Failed to delete url');
+    }
   }
 }

@@ -17,8 +17,11 @@ export class Url {
   @Column({ type: 'uuid', name: 'user_id' })
   readonly userId: string;
 
-  @Column({ type: 'varchar', length: 2048, name: 'long_code' })
-  readonly longCode: string;
+  @Column({ type: 'varchar', length: 2048, name: 'encrypted_url' })
+  readonly encryptedUrl: string;
+
+  @Column({ type: 'varchar', length: 64, name: 'title' })
+  readonly title: string;
 
   @Column({ type: 'varchar', length: 255, unique: true, name: 'short_code' })
   readonly shortCode: string;
