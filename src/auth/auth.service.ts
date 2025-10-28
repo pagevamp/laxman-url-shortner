@@ -123,6 +123,40 @@ export class AuthService {
     }
   }
 
+  async verify(token: string) {
+    try {
+      const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
+        secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
+      });
+
+      const record = await this.emailVerificationRepo.findOneByOrFail({
+        token,
+      });
+
+      if (record.expiresAt < new Date()) {
+        throw new BadRequestException('Token has expired');
+      }
+
+      await this.emailVerificationRepo.save(record);
+
+      const user = await this.userRepository.findOne({
+        where: {
+          email: payload.email,
+        },
+      });
+      if (!user) throw new Error('User not found');
+
+      await this.userRepository.update(user.id, { verifiedAt: new Date() });
+
+      await this.emailVerificationRepo.delete({ token });
+
+      return { message: EmailMessages.emailVerifySuccess };
+    } catch (error) {
+      console.error('Verification error:', error);
+      throw new BadRequestException(EmailMessages.emailVerifyFailed);
+    }
+  }
+
   async login(
     loginRequestData: LoginRequestData,
   ): Promise<{ accessToken: string }> {
@@ -163,40 +197,6 @@ export class AuthService {
     } catch (error) {
       console.error('Token validation error:', error);
       throw new UnauthorizedException('Invalid or expired token');
-    }
-  }
-
-  async verify(token: string) {
-    try {
-      const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
-        secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
-      });
-
-      const record = await this.emailVerificationRepo.findOneByOrFail({
-        token,
-      });
-
-      if (record.expiresAt < new Date()) {
-        throw new BadRequestException('Token has expired');
-      }
-
-      await this.emailVerificationRepo.save(record);
-
-      const user = await this.userRepository.findOne({
-        where: {
-          email: payload.email,
-        },
-      });
-      if (!user) throw new Error('User not found');
-
-      await this.userRepository.update(user.id, { verifiedAt: new Date() });
-
-      await this.emailVerificationRepo.delete({ token });
-
-      return { message: EmailMessages.emailVerifySuccess };
-    } catch (error) {
-      console.error('Verification error:', error);
-      throw new BadRequestException(EmailMessages.emailVerifyFailed);
     }
   }
 }
