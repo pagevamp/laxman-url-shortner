@@ -8,16 +8,20 @@ import { UrlModule } from './url/url.module';
 import dataSource from './data-source';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CronModule } from './cron/cron.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     TypeOrmModule.forRoot(dataSource.options),
     UserModule,
     AuthModule,
     EmailModule,
     UrlModule,
     CronModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [],

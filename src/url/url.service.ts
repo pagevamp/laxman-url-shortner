@@ -4,8 +4,8 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Url } from './url.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUrlRequestData } from './dto/create-url-request-data';
 import {
@@ -16,12 +16,17 @@ import {
 } from './utils/crypto-helper';
 import { UserService } from '../user/user.service';
 import { GetUrlRequestData } from './dto/get-urls-request-data';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { AnalyticsService } from '../analytics/analytics.service';
+import { Request } from 'express';
 @Injectable()
 export class UrlService {
   constructor(
     @InjectRepository(Url)
     private readonly urlRepository: Repository<Url>,
     private readonly userService: UserService,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly analyticsService: AnalyticsService,
   ) {}
 
   async create(
@@ -63,7 +68,7 @@ export class UrlService {
     }
   }
 
-  async getLongUrl(shortCode: string): Promise<{ longCode: string }> {
+  async getLongUrl(shortCode: string, req: any): Promise<{ longCode: string }> {
     if (!shortCode) {
       throw new BadRequestException('Short code is required');
     }
@@ -77,7 +82,7 @@ export class UrlService {
     }
 
     const decryptedUrl = decrypt(url.encryptedUrl);
-    console.log('the url is', decryptedUrl);
+    await this.analyticsService.recordClick(url.id, req);
     return { longCode: decryptedUrl };
   }
 
