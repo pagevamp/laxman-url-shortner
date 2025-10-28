@@ -16,7 +16,6 @@ import {
 } from './utils/crypto-helper';
 import { UserService } from '../user/user.service';
 import { GetUrlRequestData } from './dto/get-urls-request-data';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { Request } from 'express';
 @Injectable()
@@ -25,7 +24,6 @@ export class UrlService {
     @InjectRepository(Url)
     private readonly urlRepository: Repository<Url>,
     private readonly userService: UserService,
-    private readonly eventEmitter: EventEmitter2,
     private readonly analyticsService: AnalyticsService,
   ) {}
 
