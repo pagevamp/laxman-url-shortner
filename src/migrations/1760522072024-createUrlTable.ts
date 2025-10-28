@@ -12,8 +12,10 @@ export class CreateUrlTable1760522072024 implements MigrationInterface {
             "is_active" boolean DEFAULT true,
             "created_at" timestamp with time zone DEFAULT now(),
             "deleted_at" timestamp with time zone DEFAULT NULL,
+            "original_url" VARCHAR(64) NOT NULL,
             "expires_at" timestamp with time zone NOT NULL, 
             "updated_at" timestamp with time zone DEFAULT NULL,
+            "expiry_alerted_at" timestamp with time zone DEFAULT NULL,
             CONSTRAINT "fk_user_urls"
             FOREIGN KEY ("user_id")
             REFERENCES "users" ("id") ON DELETE CASCADE            

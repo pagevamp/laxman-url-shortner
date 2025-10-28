@@ -2,8 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Url } from 'src/url/url.entity';
-import { LessThan, Repository } from 'typeorm';
-import { checkUrl } from './utils';
+import { IsNull, LessThan, Repository } from 'typeorm';
 import { EmailService } from '../email/email.service';
 import { User } from 'src/user/user.entity';
 
@@ -21,23 +20,21 @@ export class CheckUrlExpiry {
   async checkUrls() {
     try {
       const expiredUrls = await this.urlRepository.find({
-        where: { expiresAt: LessThan(new Date()), expiryAlert: false },
+        where: { expiresAt: LessThan(new Date()), expiryAlertedAt: IsNull() },
       });
-      if (expiredUrls.length !== 0) {
-        for (const url of expiredUrls) {
-          if (!checkUrl(url.expiresAt!)) {
-            const user = await this.userRepository.findOneByOrFail({
-              id: url.userId,
-            });
-            await this.emailService.sendMail({
-              to: user.email,
-              subject: `Your ${url.title} URL has expired`,
-              text: `Hi ${user.fullName} your ${url.title} url has expired!`,
-            });
-            url.expiryAlert = true;
-            await this.urlRepository.save(url);
-          }
-        }
+      for (const url of expiredUrls) {
+        const user = await this.userRepository.findOneByOrFail({
+          id: url.userId,
+        });
+        await this.emailService.sendMail({
+          to: user.email,
+          subject: `Your ${url.title} URL has expired`,
+          text: `Hi ${user.fullName} your ${url.title} url has expired!`,
+        });
+        await this.urlRepository.save({
+          ...url,
+          expiryAlertedAt: new Date(Date.now()),
+        });
       }
     } catch (error) {
       console.log(error);
