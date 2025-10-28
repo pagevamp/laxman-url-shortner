@@ -1,15 +1,11 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Request } from 'express';
 import geoip from 'geoip-lite';
 import { UrlAnalytics } from './analytics.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { GetUrlAnalyticsRequestData } from './dto/get-url-analytics-request-data';
-
+import useragent from 'useragent';
+import { ParsedUserAgent } from './types';
 @Injectable()
 export class AnalyticsService {
   constructor(
@@ -25,57 +21,29 @@ export class AnalyticsService {
         '0.0.0.0';
 
       const userAgent = req.headers['user-agent'] || '';
+      const parsed = (
+        useragent as unknown as {
+          parse: (ua?: string, jsAgent?: string) => ParsedUserAgent;
+        }
+      ).parse(userAgent);
 
-      console.log(ip);
+      const deviceMatch = parsed.source.match(/\(([^;]+);/);
+      const device = deviceMatch ? deviceMatch[1] : 'Unknown Device';
       const geo = geoip.lookup(ip);
-      console.log('the geo is', geo);
       const country = geo?.country || 'Unknown';
 
       const analytics = this.analyticsRepo.create({
         urlId,
         ip,
+        browser: `${parsed.family} ${parsed.major}.${parsed.minor}.${parsed.patch} `,
         userAgent,
+        device: device,
         country,
       });
 
       await this.analyticsRepo.save(analytics);
     } catch (err) {
       console.error('Failed to record click:', err);
-    }
-  }
-
-  async getRecord(id: string): Promise<GetUrlAnalyticsRequestData> {
-    try {
-      if (!id) {
-        throw new BadRequestException('Id is required');
-      }
-
-      const record = await this.analyticsRepo.findOneByOrFail({ urlId: id });
-      const clicks = await this.analyticsRepo.count({ where: { urlId: id } });
-      return { ...record, clicks };
-    } catch (error) {
-      console.error(`Error fetching url analytics `, error);
-
-      if (error instanceof NotFoundException) throw error;
-
-      throw new BadRequestException('Failed to fetch url analytics');
-    }
-  }
-
-  async getRecords(id: string): Promise<GetUrlAnalyticsRequestData> {
-    try {
-      if (!id) {
-        throw new BadRequestException('Id is required');
-      }
-      const record = await this.analyticsRepo.findOneByOrFail({ urlId: id });
-      const clicks = await this.analyticsRepo.count({ where: { urlId: id } });
-      return { ...record, clicks };
-    } catch (error) {
-      console.error(`Error fetching url analytics `, error);
-
-      if (error instanceof NotFoundException) throw error;
-
-      throw new BadRequestException('Failed to fetch url analytics');
     }
   }
 }
