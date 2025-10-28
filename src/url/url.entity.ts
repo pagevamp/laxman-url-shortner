@@ -32,8 +32,13 @@ export class Url {
   @Column({ type: 'varchar', length: 64, unique: true, name: 'original_url' })
   readonly originalUrl: string;
 
-  @Column({ name: 'expiry_alert', default: false })
-  expiryAlert: boolean;
+  @Column({
+    type: 'timestamp with time zone',
+    name: 'expiry_alerted_at',
+    nullable: true,
+    default: null,
+  })
+  readonly expiryAlertedAt: Date | null;
 
   @Column({
     type: 'timestamp with time zone',
