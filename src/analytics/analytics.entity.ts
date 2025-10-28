@@ -19,6 +19,12 @@ export class UrlAnalytics {
   @Column({ type: 'varchar', length: 40, nullable: true, name: 'country' })
   readonly country: string;
 
+  @Column({ type: 'varchar', length: 50, nullable: true, name: 'device' })
+  readonly device: string;
+
+  @Column({ type: 'varchar', length: 40, nullable: true, name: 'browser' })
+  readonly browser: string;
+
   @Column({ type: 'varchar', length: 100, nullable: true, name: 'ip' })
   readonly ip: string;
 
