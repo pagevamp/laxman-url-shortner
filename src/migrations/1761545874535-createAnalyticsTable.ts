@@ -9,6 +9,8 @@ export class CreateAnalyticsTable1761545874535 implements MigrationInterface {
         "redirected_at" timestamp with time zone DEFAULT NOW(),
         "ip" VARCHAR(100) NOT NULL,
         "country" VARCHAR(40) NOT NULL,
+        "device" VARCHAR(50) NOT NULL,
+        "browser" VARCHAR(40) NOT NULL,
         "user_agent" VARCHAR(200) NOT NULL,
         CONSTRAINT "fk_url_analytics"
           FOREIGN KEY ("url_id") REFERENCES "urls" ("id") ON DELETE CASCADE
