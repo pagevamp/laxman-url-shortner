@@ -9,10 +9,12 @@ import dataSource from './data-source';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CronModule } from './cron/cron.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     TypeOrmModule.forRoot(dataSource.options),
     UserModule,
     AuthModule,

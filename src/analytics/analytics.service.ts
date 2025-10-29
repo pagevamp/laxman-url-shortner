@@ -6,6 +6,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import useragent from 'useragent';
 import { ParsedUserAgent } from './types';
+import { OnEvent } from '@nestjs/event-emitter';
+import { UrlRedirectedEvent } from 'src/event/Url-redirected.events';
 @Injectable()
 export class AnalyticsService {
   constructor(
@@ -13,7 +15,10 @@ export class AnalyticsService {
     private readonly analyticsRepo: Repository<UrlAnalytics>,
   ) {}
 
-  async recordClick(urlId: string, req: Request): Promise<void> {
+  @OnEvent('url.redirected')
+  async recordClick(event: UrlRedirectedEvent): Promise<void> {
+    const urlId = event.urlId;
+    const req = event.req;
     const ip =
       (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
       req.socket?.remoteAddress?.replace('::ffff:', '') ||

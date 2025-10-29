@@ -16,8 +16,9 @@ import {
 import { UserService } from '../user/user.service';
 import { GetUrlRequestData } from './dto/get-urls-request-data';
 import { AnalyticsService } from '../analytics/analytics.service';
-import { Request } from 'express';
 import { RequestWithUser } from 'src/types/RequestWithUser';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UrlRedirectedEvent } from 'src/event/Url-redirected.events';
 @Injectable()
 export class UrlService {
   constructor(
@@ -25,6 +26,7 @@ export class UrlService {
     private readonly urlRepository: Repository<Url>,
     private readonly userService: UserService,
     private readonly analyticsService: AnalyticsService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async create(
@@ -73,7 +75,10 @@ export class UrlService {
     }
 
     const decryptedUrl = decrypt(url.encryptedUrl);
-    await this.analyticsService.recordClick(url.id, req);
+
+    const event = new UrlRedirectedEvent(url.id, req);
+    this.eventEmitter.emit('url.redirected', event);
+
     return { longCode: decryptedUrl };
   }
 
