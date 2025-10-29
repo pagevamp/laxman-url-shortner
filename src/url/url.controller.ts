@@ -31,11 +31,7 @@ export class UrlController {
     @Body() body: CreateUrlRequestData,
     @Req() request: RequestWithUser,
   ) {
-    const userData = request.decodedData;
-    if (!userData) {
-      throw new Error('User data not found');
-    }
-    const userId = userData.sub;
+    const userId = request.decodedData.sub;
     return await this.urlService.create(userId, body);
   }
 
@@ -43,18 +39,17 @@ export class UrlController {
   @HttpCode(HttpStatus.OK)
   @Get()
   async getUrls(@Req() request: RequestWithUser) {
-    const userData = request.decodedData;
-    if (!userData) {
-      throw new Error('User data not found');
-    }
-    const userId = userData.sub;
+    const userId = request.decodedData.sub;
     return await this.urlService.getAll(userId);
   }
 
   // @UseGuards(AuthGuard)
   @Get(':shortCode')
   @Redirect()
-  async redirect(@Param('shortCode') shortCode: string, @Req() req: any) {
+  async redirect(
+    @Param('shortCode') shortCode: string,
+    @Req() req: RequestWithUser,
+  ) {
     const { longCode } = await this.urlService.getLongUrl(shortCode, req);
     return { url: longCode, statusCode: 302 };
   }
@@ -68,11 +63,7 @@ export class UrlController {
     @Body()
     body: Partial<UpdateUrlRequestData>,
   ) {
-    const userData = request.decodedData;
-    if (!userData) {
-      throw new Error('User data not found');
-    }
-    const userId = userData.sub;
+    const userId = request.decodedData.sub;
     return await this.urlService.update(userId, id, body);
   }
 
@@ -83,11 +74,7 @@ export class UrlController {
     @Req() request: RequestWithUser,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    const userData = request.decodedData;
-    if (!userData) {
-      throw new Error('User data not found');
-    }
-    const userId = userData.sub;
+    const userId = request.decodedData.sub;
     await this.urlService.delete(userId, id);
     return { message: 'URL deleted successfully' };
   }

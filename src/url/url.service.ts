@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Url } from './url.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { CreateUrlRequestData } from './dto/create-url-request-data';
 import {
   CodeGenerator,
@@ -18,6 +18,7 @@ import { UserService } from '../user/user.service';
 import { GetUrlRequestData } from './dto/get-urls-request-data';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { Request } from 'express';
+import { RequestWithUser } from 'src/types/RequestWithUser';
 @Injectable()
 export class UrlService {
   constructor(
@@ -55,7 +56,7 @@ export class UrlService {
         userId: userId,
         shortCode: shortCode,
         encryptedUrl: encryptedUrl,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: createUrlRequestData.expiresAt,
         originalUrl: hashUrl,
       });
       return await this.urlRepository.save(url);
@@ -66,13 +67,16 @@ export class UrlService {
     }
   }
 
-  async getLongUrl(shortCode: string, req: any): Promise<{ longCode: string }> {
+  async getLongUrl(
+    shortCode: string,
+    req: RequestWithUser,
+  ): Promise<{ longCode: string }> {
     if (!shortCode) {
       throw new BadRequestException('Short code is required');
     }
-    console.log('the short code is:', shortCode);
     const url = await this.urlRepository.findOneByOrFail({
       shortCode,
+      expiresAt: MoreThan(new Date()),
     });
 
     if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
