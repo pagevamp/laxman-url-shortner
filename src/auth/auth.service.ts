@@ -9,6 +9,7 @@ import { EmailService } from '../email/email.service';
 import { EmailVerificationPayload } from './interface';
 import { EmailVerification } from 'src/auth/email-verification.entity';
 import { EmailMessages } from './messages';
+import { ResendEmailVerificationRequestData } from './dto/resend-verification-dto';
 
 @Injectable()
 export class AuthService {
@@ -57,7 +58,8 @@ export class AuthService {
     await this.userRepository.save(user);
 
     try {
-      await this.sendVerificationLink(email);
+      const requestData = { email: email };
+      await this.sendVerificationLink(requestData);
       console.log('Verification email sent to:', email);
     } catch (error) {
       console.error('Failed to send verification email:', error);
@@ -68,13 +70,16 @@ export class AuthService {
     return { access_token: await this.jwtService.signAsync(payload) };
   }
 
-  async sendVerificationLink(email: string) {
+  async sendVerificationLink(
+    resendEmailVerificationRequestData: ResendEmailVerificationRequestData,
+  ) {
+    const email = resendEmailVerificationRequestData.email;
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
       throw new BadRequestException('User not found');
     }
 
-    if (user.verifiedAt !== null) {
+    if (user.verifiedAt) {
       throw new BadRequestException('User is already verified');
     }
 
