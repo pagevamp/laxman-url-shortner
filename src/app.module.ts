@@ -8,6 +8,7 @@ import { UrlModule } from './url/url.module';
 import dataSource from './data-source';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CronModule } from './cron/cron.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { CronModule } from './cron/cron.module';
     EmailModule,
     UrlModule,
     CronModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [],
