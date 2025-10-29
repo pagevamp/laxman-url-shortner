@@ -34,6 +34,14 @@ export class Url {
 
   @Column({
     type: 'timestamp with time zone',
+    name: 'expiry_alerted_at',
+    nullable: true,
+    default: null,
+  })
+  readonly expiryAlertedAt: Date | null;
+
+  @Column({
+    type: 'timestamp with time zone',
     nullable: true,
     name: 'deleted_at',
   })
