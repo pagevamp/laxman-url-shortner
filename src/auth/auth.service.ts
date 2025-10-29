@@ -5,17 +5,17 @@ import {
 } from '@nestjs/common';
 import { SignupRequestData } from './dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
+import { EmailService } from 'src/email/email.service';
 import { CryptoService } from './crypto.service';
 import { LoginRequestData } from './dto/login-user-dto';
 import * as bcrypt from 'bcrypt';
-import { JwtPayload } from '../types/JwtPayload';
 import { Repository } from 'typeorm';
 import { User } from 'src/user/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EmailService } from '../email/email.service';
+import { EmailVerification } from './email-verification.entity';
 import { EmailVerificationPayload } from './interface';
-import { EmailVerification } from 'src/auth/email-verification.entity';
 import { EmailMessages } from './messages';
+import { JwtPayload } from 'src/types/JwtPayload';
 
 @Injectable()
 export class AuthService {
@@ -23,10 +23,10 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
-    private readonly cryptoService: CryptoService,
     private readonly emailService: EmailService,
     @InjectRepository(EmailVerification)
     private readonly emailVerificationRepo: Repository<EmailVerification>,
+    private readonly cryptoService: CryptoService,
   ) {}
 
   async signUp(
@@ -47,6 +47,14 @@ export class AuthService {
       if (existingUser.email === signUpUserDto.email) {
         throw new BadRequestException('Email already taken');
       }
+    }
+
+    const userByEmail = await this.userRepository.findOne({
+      where: { email: signUpUserDto.email },
+    });
+
+    if (userByEmail) {
+      throw new BadRequestException('Email already taken');
     }
 
     const hashedPassword = await this.cryptoService.hashPassword(
@@ -122,7 +130,6 @@ export class AuthService {
       throw new Error(EmailMessages.emailSendFailed);
     }
   }
-
   async verify(token: string) {
     try {
       const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
@@ -152,8 +159,9 @@ export class AuthService {
 
       return { message: EmailMessages.emailVerifySuccess };
     } catch (error) {
-      console.error('Verification error:', error);
-      throw new BadRequestException(EmailMessages.emailVerifyFailed);
+      throw new BadRequestException({
+        message: (error as Error)?.message,
+      });
     }
   }
 
@@ -162,9 +170,10 @@ export class AuthService {
   ): Promise<{ accessToken: string }> {
     try {
       const user = await this.userRepository.findOne({
-        where: { email: loginRequestData.email },
+        where: {
+          email: loginRequestData.email,
+        },
       });
-
       if (!user) {
         throw new BadRequestException('User not found');
       }
