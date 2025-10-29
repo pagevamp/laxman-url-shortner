@@ -19,6 +19,7 @@ import { GetUrlRequestData } from './dto/get-urls-request-data';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { Request } from 'express';
 import { RequestWithUser } from 'src/types/RequestWithUser';
+import { handleError } from 'src/utils/error-handler';
 @Injectable()
 export class UrlService {
   constructor(
@@ -33,10 +34,6 @@ export class UrlService {
     createUrlRequestData: CreateUrlRequestData,
   ): Promise<Url> {
     try {
-      const user = await this.userService.findOneByField('id', userId);
-      if (user?.verifiedAt === null) {
-        throw new BadRequestException('Please verify with your email first');
-      }
       if (!createUrlRequestData.originalUrl) {
         throw new BadRequestException('Missing required fields');
       }
@@ -61,9 +58,7 @@ export class UrlService {
       });
       return await this.urlRepository.save(url);
     } catch (error) {
-      throw new BadRequestException({
-        message: (error as Error)?.message,
-      });
+      handleError(error);
     }
   }
 
@@ -71,33 +66,41 @@ export class UrlService {
     shortCode: string,
     req: RequestWithUser,
   ): Promise<{ longCode: string }> {
-    if (!shortCode) {
-      throw new BadRequestException('Short code is required');
-    }
-    const url = await this.urlRepository.findOneByOrFail({
-      shortCode,
-      expiresAt: MoreThan(new Date()),
-    });
+    try {
+      if (!shortCode) {
+        throw new BadRequestException('Short code is required');
+      }
+      const url = await this.urlRepository.findOneByOrFail({
+        shortCode,
+        expiresAt: MoreThan(new Date()),
+      });
 
-    if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
-      throw new NotFoundException('This URL has expired');
-    }
+      if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
+        throw new NotFoundException('This URL has expired');
+      }
 
-    const decryptedUrl = decrypt(url.encryptedUrl);
-    await this.analyticsService.recordClick(url.id, req);
-    return { longCode: decryptedUrl };
+      const decryptedUrl = decrypt(url.encryptedUrl);
+      await this.analyticsService.recordClick(url.id, req);
+      return { longCode: decryptedUrl };
+    } catch (error) {
+      handleError(error);
+    }
   }
 
   async getAll(userId: string): Promise<GetUrlRequestData[]> {
-    const urls = (await this.urlRepository.find({
-      where: { userId: userId },
-      select: ['title', 'shortCode', 'expiresAt'],
-    })) as GetUrlRequestData[];
-    const result = urls.map((item) => ({
-      ...item,
-      shortCode: `${process.env.REDIRECT_BASE_URL}${item.shortCode}`,
-    }));
-    return result;
+    try {
+      const urls = (await this.urlRepository.find({
+        where: { userId: userId },
+        select: ['title', 'shortCode', 'expiresAt'],
+      })) as GetUrlRequestData[];
+      const result = urls.map((item) => ({
+        ...item,
+        shortCode: `${process.env.REDIRECT_BASE_URL}${item.shortCode}`,
+      }));
+      return result;
+    } catch (error) {
+      handleError(error);
+    }
   }
 
   async update(
@@ -123,11 +126,7 @@ export class UrlService {
 
       return await this.urlRepository.findOneByOrFail({ id: urlId });
     } catch (error) {
-      console.error(`Error updating url ${urlId}:`, error);
-
-      if (error instanceof NotFoundException) throw error;
-
-      throw new BadRequestException('Failed to update url');
+      handleError(error);
     }
   }
 
@@ -150,9 +149,7 @@ export class UrlService {
         throw new NotFoundException('URL not found');
       }
     } catch (error) {
-      console.error(`Error updating url ${urlId}:`, error);
-      if (error instanceof NotFoundException) throw error;
-      throw new BadRequestException('Failed to delete url');
+      handleError(error);
     }
   }
 }

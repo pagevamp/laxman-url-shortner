@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { SignupRequestData } from './dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from 'src/email/email.service';
@@ -16,6 +12,7 @@ import { EmailVerification } from './email-verification.entity';
 import { EmailVerificationPayload } from './interface';
 import { EmailMessages } from './messages';
 import { JwtPayload } from 'src/types/JwtPayload';
+import { handleError } from 'src/utils/error-handler';
 
 @Injectable()
 export class AuthService {
@@ -29,9 +26,7 @@ export class AuthService {
     private readonly cryptoService: CryptoService,
   ) {}
 
-  async signUp(
-    signUpUserDto: SignupRequestData,
-  ): Promise<{ accessToken: string }> {
+  async signUp(signUpUserDto: SignupRequestData): Promise<User> {
     const existingUser = await this.userRepository.findOne({
       where: [
         { username: signUpUserDto.username },
@@ -74,14 +69,11 @@ export class AuthService {
 
     try {
       await this.sendVerificationLink(email);
-      console.log('Verification email sent to:', email);
     } catch (error) {
-      console.error('Failed to send verification email:', error);
+      handleError(error);
     }
 
-    const payload = { sub: user.id, username: user.username };
-
-    return { accessToken: await this.jwtService.signAsync(payload) };
+    return user;
   }
 
   async sendVerificationLink(email: string) {
@@ -126,8 +118,7 @@ export class AuthService {
         message: EmailMessages.emailSendSuccess,
       };
     } catch (error) {
-      console.error('Failed to send verification email', error);
-      throw new Error(EmailMessages.emailSendFailed);
+      handleError(error);
     }
   }
   async verify(token: string) {
@@ -159,9 +150,7 @@ export class AuthService {
 
       return { message: EmailMessages.emailVerifySuccess };
     } catch (error) {
-      throw new BadRequestException({
-        message: (error as Error)?.message,
-      });
+      handleError(error);
     }
   }
 
@@ -178,6 +167,12 @@ export class AuthService {
         throw new BadRequestException('User not found');
       }
 
+      if (user.verifiedAt === null) {
+        throw new BadRequestException(
+          'User not verified. Please verify before login',
+        );
+      }
+
       const match = await bcrypt.compare(
         loginRequestData.password,
         user.password,
@@ -190,10 +185,7 @@ export class AuthService {
         throw new BadRequestException('Invalid email or password');
       }
     } catch (error) {
-      throw new BadRequestException({
-        message: 'Something went wrong during login',
-        error: (error as Error)?.message,
-      });
+      handleError(error);
     }
   }
 
@@ -204,8 +196,7 @@ export class AuthService {
       });
       return decoded;
     } catch (error) {
-      console.error('Token validation error:', error);
-      throw new UnauthorizedException('Invalid or expired token');
+      handleError(error);
     }
   }
 }

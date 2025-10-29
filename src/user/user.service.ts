@@ -8,6 +8,7 @@ import { User } from './user.entity';
 import { Repository } from 'typeorm';
 import { SignupRequestData } from 'src/auth/dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
+import { handleError } from 'src/utils/error-handler';
 
 @Injectable()
 export class UserService {
@@ -21,8 +22,7 @@ export class UserService {
     try {
       return await this.userRepository.find();
     } catch (error) {
-      console.error('Error fetching users:', error);
-      throw new BadRequestException('Failed to fetch users');
+      handleError(error);
     }
   }
 
@@ -39,8 +39,7 @@ export class UserService {
 
       return user || null;
     } catch (error) {
-      console.error(`Error fetching user by ${String(field)}:`, error);
-      throw new BadRequestException('Failed to fetch user');
+      handleError(error);
     }
   }
 
@@ -53,8 +52,7 @@ export class UserService {
       const user = this.userRepository.create(userDto);
       return await this.userRepository.save(user);
     } catch (error) {
-      console.error('Error creating user:', error);
-      throw new BadRequestException('Failed to create user');
+      handleError(error);
     }
   }
 
@@ -73,11 +71,7 @@ export class UserService {
 
       return await this.userRepository.findOneByOrFail({ id: userId });
     } catch (error) {
-      console.error(`Error updating user ${userId}:`, error);
-
-      if (error instanceof NotFoundException) throw error;
-
-      throw new BadRequestException('Failed to update user');
+      handleError(error);
     }
   }
 }

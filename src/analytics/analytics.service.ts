@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import useragent from 'useragent';
 import { ParsedUserAgent } from './types';
+import { handleError } from 'src/utils/error-handler';
 @Injectable()
 export class AnalyticsService {
   constructor(
@@ -42,8 +43,8 @@ export class AnalyticsService {
       });
 
       await this.analyticsRepo.save(analytics);
-    } catch (err) {
-      console.error('Failed to record click:', err);
+    } catch (error) {
+      handleError(error);
     }
   }
 }

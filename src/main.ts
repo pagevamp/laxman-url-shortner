@@ -18,6 +18,6 @@ bootstrap()
   .then(() => {
     console.log('API started');
   })
-  .catch((err) => {
-    console.error(err);
+  .catch((error) => {
+    if (error instanceof Error) throw error;
   });

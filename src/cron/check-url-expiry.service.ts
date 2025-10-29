@@ -5,6 +5,7 @@ import { Url } from 'src/url/url.entity';
 import { IsNull, LessThan, Repository } from 'typeorm';
 import { EmailService } from '../email/email.service';
 import { User } from 'src/user/user.entity';
+import { handleError } from 'src/utils/error-handler';
 
 @Injectable()
 export class CheckUrlExpiry {
@@ -37,7 +38,7 @@ export class CheckUrlExpiry {
         });
       }
     } catch (error) {
-      console.log(error);
+      handleError(error);
     }
   }
 }
