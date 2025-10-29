@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Url } from './url.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -113,13 +112,12 @@ export class UrlService {
     }
 
     try {
-      const existingUrl = await this.urlRepository.findOneBy({ id: urlId });
+      const existingUrl = await this.urlRepository.findOneBy({
+        id: urlId,
+        userId: userId,
+      });
       if (!existingUrl) {
         throw new NotFoundException(`Url with ID ${urlId} not found`);
-      }
-
-      if (existingUrl.userId !== userId) {
-        throw new UnauthorizedException('You are not authorized');
       }
 
       await this.urlRepository.update(urlId, updateData);
@@ -135,13 +133,13 @@ export class UrlService {
       throw new BadRequestException('URL id is required');
     }
     try {
-      const existingUrl = await this.urlRepository.findOneBy({ id: urlId });
+      const existingUrl = await this.urlRepository.findOneBy({
+        id: urlId,
+        userId: userId,
+      });
+
       if (!existingUrl) {
         throw new NotFoundException(`Url with ID ${urlId} not found`);
-      }
-
-      if (existingUrl.userId !== userId) {
-        throw new UnauthorizedException('You are not authorized');
       }
 
       const deletedUrl = await this.urlRepository.delete({ id: urlId });
