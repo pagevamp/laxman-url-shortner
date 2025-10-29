@@ -18,7 +18,6 @@ import { GetUrlRequestData } from './dto/get-urls-request-data';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { Request } from 'express';
 import { RequestWithUser } from 'src/types/RequestWithUser';
-import { handleError } from 'src/utils/error-handler';
 @Injectable()
 export class UrlService {
   constructor(
@@ -32,74 +31,62 @@ export class UrlService {
     userId: string,
     createUrlRequestData: CreateUrlRequestData,
   ): Promise<Url> {
-    try {
-      if (!createUrlRequestData.originalUrl) {
-        throw new BadRequestException('Missing required fields');
-      }
-      const hashUrl = hashString(createUrlRequestData.originalUrl);
-
-      const existingUrl = await this.urlRepository.findOne({
-        where: { originalUrl: hashUrl },
-      });
-
-      if (existingUrl) {
-        throw new BadRequestException('short url for this URL already exists');
-      }
-      const shortCode = CodeGenerator();
-      const encryptedUrl = encrypt(createUrlRequestData.originalUrl);
-      const url = this.urlRepository.create({
-        title: createUrlRequestData.title,
-        userId: userId,
-        shortCode: shortCode,
-        encryptedUrl: encryptedUrl,
-        expiresAt: createUrlRequestData.expiresAt,
-        originalUrl: hashUrl,
-      });
-      return await this.urlRepository.save(url);
-    } catch (error) {
-      handleError(error);
+    if (!createUrlRequestData.originalUrl) {
+      throw new BadRequestException('Missing required fields');
     }
+    const hashUrl = hashString(createUrlRequestData.originalUrl);
+
+    const existingUrl = await this.urlRepository.findOne({
+      where: { originalUrl: hashUrl },
+    });
+
+    if (existingUrl) {
+      throw new BadRequestException('short url for this URL already exists');
+    }
+    const shortCode = CodeGenerator();
+    const encryptedUrl = encrypt(createUrlRequestData.originalUrl);
+    const url = this.urlRepository.create({
+      title: createUrlRequestData.title,
+      userId: userId,
+      shortCode: shortCode,
+      encryptedUrl: encryptedUrl,
+      expiresAt: createUrlRequestData.expiresAt,
+      originalUrl: hashUrl,
+    });
+    return await this.urlRepository.save(url);
   }
 
   async getLongUrl(
     shortCode: string,
     req: RequestWithUser,
   ): Promise<{ longCode: string }> {
-    try {
-      if (!shortCode) {
-        throw new BadRequestException('Short code is required');
-      }
-      const url = await this.urlRepository.findOneByOrFail({
-        shortCode,
-        expiresAt: MoreThan(new Date()),
-      });
-
-      if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
-        throw new NotFoundException('This URL has expired');
-      }
-
-      const decryptedUrl = decrypt(url.encryptedUrl);
-      await this.analyticsService.recordClick(url.id, req);
-      return { longCode: decryptedUrl };
-    } catch (error) {
-      handleError(error);
+    if (!shortCode) {
+      throw new BadRequestException('Short code is required');
     }
+    const url = await this.urlRepository.findOneByOrFail({
+      shortCode,
+      expiresAt: MoreThan(new Date()),
+    });
+
+    if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
+      throw new NotFoundException('This URL has expired');
+    }
+
+    const decryptedUrl = decrypt(url.encryptedUrl);
+    await this.analyticsService.recordClick(url.id, req);
+    return { longCode: decryptedUrl };
   }
 
   async getAll(userId: string): Promise<GetUrlRequestData[]> {
-    try {
-      const urls = (await this.urlRepository.find({
-        where: { userId: userId },
-        select: ['title', 'shortCode', 'expiresAt'],
-      })) as GetUrlRequestData[];
-      const result = urls.map((item) => ({
-        ...item,
-        shortCode: `${process.env.REDIRECT_BASE_URL}${item.shortCode}`,
-      }));
-      return result;
-    } catch (error) {
-      handleError(error);
-    }
+    const urls = (await this.urlRepository.find({
+      where: { userId: userId },
+      select: ['title', 'shortCode', 'expiresAt'],
+    })) as GetUrlRequestData[];
+    const result = urls.map((item) => ({
+      ...item,
+      shortCode: `${process.env.REDIRECT_BASE_URL}${item.shortCode}`,
+    }));
+    return result;
   }
 
   async update(
@@ -111,43 +98,35 @@ export class UrlService {
       throw new BadRequestException('URL id is required');
     }
 
-    try {
-      const existingUrl = await this.urlRepository.findOneBy({
-        id: urlId,
-        userId: userId,
-      });
-      if (!existingUrl) {
-        throw new NotFoundException(`Url with ID ${urlId} not found`);
-      }
-
-      await this.urlRepository.update(urlId, updateData);
-
-      return await this.urlRepository.findOneByOrFail({ id: urlId });
-    } catch (error) {
-      handleError(error);
+    const existingUrl = await this.urlRepository.findOneBy({
+      id: urlId,
+      userId: userId,
+    });
+    if (!existingUrl) {
+      throw new NotFoundException(`Url with ID ${urlId} not found`);
     }
+
+    await this.urlRepository.update(urlId, updateData);
+
+    return await this.urlRepository.findOneByOrFail({ id: urlId });
   }
 
   async delete(userId: string, urlId: string): Promise<void> {
     if (!urlId) {
       throw new BadRequestException('URL id is required');
     }
-    try {
-      const existingUrl = await this.urlRepository.findOneBy({
-        id: urlId,
-        userId: userId,
-      });
+    const existingUrl = await this.urlRepository.findOneBy({
+      id: urlId,
+      userId: userId,
+    });
 
-      if (!existingUrl) {
-        throw new NotFoundException(`Url with ID ${urlId} not found`);
-      }
+    if (!existingUrl) {
+      throw new NotFoundException(`Url with ID ${urlId} not found`);
+    }
 
-      const deletedUrl = await this.urlRepository.delete({ id: urlId });
-      if (deletedUrl.affected === 0) {
-        throw new NotFoundException('URL not found');
-      }
-    } catch (error) {
-      handleError(error);
+    const deletedUrl = await this.urlRepository.delete({ id: urlId });
+    if (deletedUrl.affected === 0) {
+      throw new NotFoundException('URL not found');
     }
   }
 }

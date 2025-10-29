@@ -21,17 +21,13 @@ export class AuthGuard implements CanActivate {
     }
 
     const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-    try {
-      const decoded = await this.authService.validateToken(token);
-      request.decodedData = decoded;
-      const userData = request.decodedData;
-      if (!userData) {
-        throw new UnauthorizedException('Invalid or missing token');
-      }
-      return true;
-    } catch (error) {
-      if (error instanceof UnauthorizedException) throw error;
-      return false;
+
+    const decoded = await this.authService.validateToken(token);
+    request.decodedData = decoded;
+    const userData = request.decodedData;
+    if (!userData) {
+      throw new UnauthorizedException('Invalid or missing token');
     }
+    return true;
   }
 }

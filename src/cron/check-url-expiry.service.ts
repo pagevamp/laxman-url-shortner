@@ -5,7 +5,6 @@ import { Url } from 'src/url/url.entity';
 import { IsNull, LessThan, Repository } from 'typeorm';
 import { EmailService } from '../email/email.service';
 import { User } from 'src/user/user.entity';
-import { handleError } from 'src/utils/error-handler';
 
 @Injectable()
 export class CheckUrlExpiry {
@@ -19,26 +18,22 @@ export class CheckUrlExpiry {
 
   @Cron(CronExpression.EVERY_30_SECONDS)
   async checkUrls() {
-    try {
-      const expiredUrls = await this.urlRepository.find({
-        where: { expiresAt: LessThan(new Date()), expiryAlertedAt: IsNull() },
+    const expiredUrls = await this.urlRepository.find({
+      where: { expiresAt: LessThan(new Date()), expiryAlertedAt: IsNull() },
+    });
+    for (const url of expiredUrls) {
+      const user = await this.userRepository.findOneByOrFail({
+        id: url.userId,
       });
-      for (const url of expiredUrls) {
-        const user = await this.userRepository.findOneByOrFail({
-          id: url.userId,
-        });
-        await this.emailService.sendMail({
-          to: user.email,
-          subject: `Your ${url.title} URL has expired`,
-          text: `Hi ${user.fullName} your ${url.title} url has expired!`,
-        });
-        await this.urlRepository.save({
-          ...url,
-          expiryAlertedAt: new Date(Date.now()),
-        });
-      }
-    } catch (error) {
-      handleError(error);
+      await this.emailService.sendMail({
+        to: user.email,
+        subject: `Your ${url.title} URL has expired`,
+        text: `Hi ${user.fullName} your ${url.title} url has expired!`,
+      });
+      await this.urlRepository.save({
+        ...url,
+        expiryAlertedAt: new Date(Date.now()),
+      });
     }
   }
 }
