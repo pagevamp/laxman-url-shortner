@@ -13,6 +13,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import type Request from 'express';
 import { UrlService } from './url.service';
 import { CreateUrlRequestData } from './dto/create-url-request-data';
 import { AuthGuard } from 'src/auth/auth.guard';
@@ -53,8 +54,8 @@ export class UrlController {
   // @UseGuards(AuthGuard)
   @Get(':shortCode')
   @Redirect()
-  async redirect(@Param('shortCode') shortCode: string) {
-    const { longCode } = await this.urlService.getLongUrl(shortCode);
+  async redirect(@Param('shortCode') shortCode: string, @Req() req: any) {
+    const { longCode } = await this.urlService.getLongUrl(shortCode, req);
     return { url: longCode, statusCode: 302 };
   }
 
