@@ -19,10 +19,9 @@ export class AnalyticsService {
   async recordClick(event: UrlRedirectedEvent): Promise<void> {
     const urlId = event.urlId;
     const req = event.req;
-    const ip =
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-      req.socket?.remoteAddress?.replace('::ffff:', '') ||
-      '0.0.0.0';
+    const ip = (req.headers['x-forwarded-for'] as string)
+      ?.split(',')[0]
+      ?.trim();
 
     const userAgent = req.headers['user-agent'] || '';
     const parsed = (
@@ -32,6 +31,7 @@ export class AnalyticsService {
     ).parse(userAgent);
 
     const deviceMatch = parsed.source.match(/\(([^;]+);/);
+    console.log('/////////////////////////', deviceMatch);
     const device = deviceMatch ? deviceMatch[1] : 'Unknown Device';
     const geo = geoip.lookup(ip);
     const country = geo?.country || 'Unknown';
@@ -46,5 +46,45 @@ export class AnalyticsService {
     });
 
     await this.analyticsRepo.save(analytics);
+  }
+
+  async getAnalytics(filters: {
+    startDate?: string;
+    endDate?: string;
+    browser?: string;
+    device?: string;
+    os?: string;
+    groupByUrl?: boolean;
+  }) {
+    const qb = this.analyticsRepo.createQueryBuilder('a');
+
+    if (filters.startDate && filters.endDate) {
+      qb.andWhere('a.clickedAt BETWEEN :start AND :end', {
+        start: filters.startDate,
+        end: filters.endDate,
+      });
+    }
+
+    if (filters.browser) {
+      qb.andWhere('a.browser = :browser', { browser: filters.browser });
+    }
+
+    if (filters.device) {
+      qb.andWhere('a.device = :device', { device: filters.device });
+    }
+
+    if (filters.os) {
+      qb.andWhere('a.os = :os', { os: filters.os });
+    }
+
+    if (filters.groupByUrl) {
+      qb.select('a.url', 'url')
+        .addSelect('COUNT(*)', 'hits')
+        .groupBy('a.url')
+        .orderBy('hits', 'DESC');
+      return qb.getRawMany();
+    }
+
+    return qb.getMany();
   }
 }
