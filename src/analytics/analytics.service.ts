@@ -30,11 +30,10 @@ export class AnalyticsService {
     const device = deviceMatch ? deviceMatch[1] : 'Unknown Device';
     const geo = geoip.lookup(ip);
     const country = geo?.country || 'Unknown';
-
     const analytics = this.analyticsRepo.create({
       urlId,
       ip,
-      browser: `${parsed.family} ${parsed.major}.${parsed.minor}.${parsed.patch} `,
+      browser: `${parsed.browser.family} ${parsed.browser.major}.${parsed.browser.minor}.${parsed.browser.patch} `,
       userAgent,
       device: device,
       country,
