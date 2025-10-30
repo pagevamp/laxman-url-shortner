@@ -32,15 +32,24 @@ export class AnalyticsService {
 
     const deviceMatch = parsed.source.match(/\(([^;]+);/);
     const device = deviceMatch ? deviceMatch[1] : 'Unknown Device';
+
+    const browserMatch = parsed.source.match(
+      /(Chrome|Firefox|Safari|Edge|Opera)\/[\d.]+/,
+    );
+    const browser = browserMatch ? browserMatch[0] : 'Unknown Browser';
+
+    const osMatch = parsed.source.match(/\((?:[^;]+);\s*([^)]+)\)/);
+
+    const os = osMatch ? osMatch[1] : 'Unknown OS';
+
     const geo = geoip.lookup(ip);
     const country = geo?.country || 'Unknown';
-    const os = parsed.os.family;
 
     const analytics = this.analyticsRepo.create({
       urlId,
       os,
       ip,
-      browser: `${parsed.family} ${parsed.major}.${parsed.minor}.${parsed.patch} `,
+      browser: browser,
       userAgent,
       device: device,
       country,
