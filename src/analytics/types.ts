@@ -10,4 +10,10 @@ export type ParsedUserAgent = {
     minor: string;
     patch: string;
   };
+  os: {
+    family: string;
+    major: string;
+    minor: string;
+    patch: string;
+  };
 };

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { Request } from 'express';
 import geoip from 'geoip-lite';
 import { UrlAnalytics } from './analytics.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,6 +7,7 @@ import useragent from 'useragent';
 import { ParsedUserAgent } from './types';
 import { OnEvent } from '@nestjs/event-emitter';
 import { UrlRedirectedEvent } from 'src/event/Url-redirected.events';
+import { FilterAnalyticsRequestData } from './dto/filter-analytics-request-data';
 @Injectable()
 export class AnalyticsService {
   constructor(
@@ -31,13 +31,14 @@ export class AnalyticsService {
     ).parse(userAgent);
 
     const deviceMatch = parsed.source.match(/\(([^;]+);/);
-    console.log('/////////////////////////', deviceMatch);
     const device = deviceMatch ? deviceMatch[1] : 'Unknown Device';
     const geo = geoip.lookup(ip);
     const country = geo?.country || 'Unknown';
+    const os = parsed.os.family;
 
     const analytics = this.analyticsRepo.create({
       urlId,
+      os,
       ip,
       browser: `${parsed.family} ${parsed.major}.${parsed.minor}.${parsed.patch} `,
       userAgent,
@@ -48,36 +49,29 @@ export class AnalyticsService {
     await this.analyticsRepo.save(analytics);
   }
 
-  async getAnalytics(filters: {
-    startDate?: string;
-    endDate?: string;
-    browser?: string;
-    device?: string;
-    os?: string;
-    groupByUrl?: boolean;
-  }) {
+  async getAnalytics(requestData: FilterAnalyticsRequestData) {
     const qb = this.analyticsRepo.createQueryBuilder('a');
 
-    if (filters.startDate && filters.endDate) {
-      qb.andWhere('a.clickedAt BETWEEN :start AND :end', {
-        start: filters.startDate,
-        end: filters.endDate,
+    if (requestData.startDate && requestData.endDate) {
+      qb.andWhere('a.redirectedAt BETWEEN :start AND :end', {
+        start: requestData.startDate,
+        end: requestData.endDate,
       });
     }
 
-    if (filters.browser) {
-      qb.andWhere('a.browser = :browser', { browser: filters.browser });
+    if (requestData.browser) {
+      qb.andWhere('a.browser = :browser', { browser: requestData.browser });
     }
 
-    if (filters.device) {
-      qb.andWhere('a.device = :device', { device: filters.device });
+    if (requestData.device) {
+      qb.andWhere('a.device = :device', { device: requestData.device });
     }
 
-    if (filters.os) {
-      qb.andWhere('a.os = :os', { os: filters.os });
+    if (requestData.os) {
+      qb.andWhere('a.os = :os', { os: requestData.os });
     }
 
-    if (filters.groupByUrl) {
+    if (requestData.groupByUrl) {
       qb.select('a.url', 'url')
         .addSelect('COUNT(*)', 'hits')
         .groupBy('a.url')
