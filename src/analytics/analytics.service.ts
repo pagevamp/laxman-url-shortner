@@ -28,12 +28,18 @@ export class AnalyticsService {
 
     const deviceMatch = parsed.source.match(/\(([^;]+);/);
     const device = deviceMatch ? deviceMatch[1] : 'Unknown Device';
+
+    const browserMatch = parsed.source.match(
+      /(Chrome|Firefox|Safari|Edge|Opera)\/[\d.]+/,
+    );
+    const browser = browserMatch ? browserMatch[0] : 'Unknown Browser';
+
     const geo = geoip.lookup(ip);
     const country = geo?.country || 'Unknown';
     const analytics = this.analyticsRepo.create({
       urlId,
       ip,
-      browser: `${parsed.browser.family} ${parsed.browser.major}.${parsed.browser.minor}.${parsed.browser.patch} `,
+      browser: browser,
       userAgent,
       device: device,
       country,
