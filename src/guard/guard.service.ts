@@ -5,11 +5,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-import { AuthService } from './auth.service';
+import { AuthService } from 'src/auth/auth.service';
 import { RequestWithUser } from '../types/RequestWithUser';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class GuardService implements CanActivate {
   constructor(private readonly authService: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

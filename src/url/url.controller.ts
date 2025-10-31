@@ -16,15 +16,15 @@ import {
 import type Request from 'express';
 import { UrlService } from './url.service';
 import { CreateUrlRequestData } from './dto/create-url-request-data';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { GuardService } from 'src/guard/guard.service';
 import type { RequestWithUser } from 'src/types/RequestWithUser';
 import { UpdateUrlRequestData } from './dto/update-url-request-data';
 
-@Controller('url')
+@Controller('urls')
 export class UrlController {
   constructor(private readonly urlService: UrlService) {}
 
-  @UseGuards(AuthGuard)
+  @UseGuards(GuardService)
   @HttpCode(HttpStatus.CREATED)
   @Post()
   async createUrl(
@@ -35,7 +35,7 @@ export class UrlController {
     return await this.urlService.create(userId, body);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(GuardService)
   @HttpCode(HttpStatus.OK)
   @Get()
   async getUrls(@Req() request: RequestWithUser) {
@@ -54,7 +54,7 @@ export class UrlController {
     return { url: longCode, statusCode: 302 };
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(GuardService)
   @HttpCode(HttpStatus.OK)
   @Patch(':id')
   async updateUrl(
@@ -67,7 +67,7 @@ export class UrlController {
     return await this.urlService.update(userId, id, body);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(GuardService)
   @HttpCode(HttpStatus.OK)
   @Delete(':id')
   async deleteUrl(

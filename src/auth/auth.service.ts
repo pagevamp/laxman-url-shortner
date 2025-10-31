@@ -12,6 +12,7 @@ import { EmailVerification } from './email-verification.entity';
 import { EmailVerificationPayload } from './interface';
 import { EmailMessages } from './messages';
 import { JwtPayload } from 'src/types/JwtPayload';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
@@ -23,50 +24,22 @@ export class AuthService {
     @InjectRepository(EmailVerification)
     private readonly emailVerificationRepo: Repository<EmailVerification>,
     private readonly cryptoService: CryptoService,
+    private readonly userService: UserService,
   ) {}
 
   async signUp(signUpUserDto: SignupRequestData): Promise<User> {
-    const existingUser = await this.userRepository.findOne({
-      where: [
-        { username: signUpUserDto.username },
-        { email: signUpUserDto.email },
-      ],
-    });
-
-    if (existingUser) {
-      if (existingUser.username === signUpUserDto.username) {
-        throw new BadRequestException('Username already taken');
-      }
-
-      if (existingUser.email === signUpUserDto.email) {
-        throw new BadRequestException('Email already taken');
-      }
-    }
-
-    const userByEmail = await this.userRepository.findOne({
-      where: { email: signUpUserDto.email },
-    });
-
-    if (userByEmail) {
-      throw new BadRequestException('Email already taken');
-    }
-
     const hashedPassword = await this.cryptoService.hashPassword(
       signUpUserDto.password,
     );
 
-    const { email, fullName, username } = signUpUserDto;
-
-    const user = this.userRepository.create({
+    const createUserRequestData: SignupRequestData = {
+      ...signUpUserDto,
       password: hashedPassword,
-      email,
-      fullName,
-      username,
-    });
+    };
 
-    await this.userRepository.save(user);
+    const user = await this.userService.create(createUserRequestData);
 
-    await this.sendVerificationLink(email);
+    await this.sendVerificationLink(user.email);
 
     return user;
   }

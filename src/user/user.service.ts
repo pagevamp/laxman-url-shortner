@@ -34,20 +34,28 @@ export class UserService {
     return user || null;
   }
 
-  async create(userDto: SignupRequestData): Promise<User> {
-    if (!userDto.email || !userDto.username || !userDto.password) {
-      throw new BadRequestException('Missing required fields');
-    }
+  async create(signUpUserDto: SignupRequestData): Promise<User> {
+    const existingUser = await this.userRepository.findOne({
+      where: [
+        { username: signUpUserDto.username },
+        { email: signUpUserDto.email },
+      ],
+    });
 
-    const user = this.userRepository.create(userDto);
+    if (existingUser) {
+      if (existingUser.username === signUpUserDto.username) {
+        throw new BadRequestException('Username already taken');
+      }
+
+      if (existingUser.email === signUpUserDto.email) {
+        throw new BadRequestException('Email already taken');
+      }
+    }
+    const user = this.userRepository.create(signUpUserDto);
     return await this.userRepository.save(user);
   }
 
   async update(userId: string, updateData: Partial<User>): Promise<User> {
-    if (!userId) {
-      throw new BadRequestException('User ID is required');
-    }
-
     const existingUser = await this.userRepository.findOneBy({ id: userId });
     if (!existingUser) {
       throw new NotFoundException(`User with ID ${userId} not found`);
