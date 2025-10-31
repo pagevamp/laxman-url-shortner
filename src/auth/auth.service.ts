@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { SignupRequestData } from './dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from 'src/email/email.service';
@@ -11,6 +15,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EmailVerification } from './email-verification.entity';
 import { EmailVerificationPayload } from './interface';
 import { EmailMessages } from './messages';
+import { JwtPayload } from 'src/types/JwtPayload';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
@@ -22,52 +28,24 @@ export class AuthService {
     @InjectRepository(EmailVerification)
     private readonly emailVerificationRepo: Repository<EmailVerification>,
     private readonly cryptoService: CryptoService,
+    private readonly userService: UserService,
   ) {}
 
-  async signUp(
-    signUpUserDto: SignupRequestData,
-  ): Promise<{ access_token: string }> {
-    const userByUsername = await this.userRepository.findOne({
-      where: { username: signUpUserDto.username },
-    });
-
-    if (userByUsername) {
-      throw new BadRequestException('Username already taken');
-    }
-
-    const userByEmail = await this.userRepository.findOne({
-      where: { email: signUpUserDto.email },
-    });
-
-    if (userByEmail) {
-      throw new BadRequestException('Email already taken');
-    }
-
+  async signUp(signUpUserDto: SignupRequestData): Promise<User> {
     const hashedPassword = await this.cryptoService.hashPassword(
       signUpUserDto.password,
     );
 
-    const { email, fullName, username } = signUpUserDto;
-
-    const user = this.userRepository.create({
+    const createUserRequestData: SignupRequestData = {
+      ...signUpUserDto,
       password: hashedPassword,
-      email,
-      fullName,
-      username,
-    });
+    };
 
-    await this.userRepository.save(user);
+    const user = await this.userService.create(createUserRequestData);
 
-    try {
-      await this.sendVerificationLink(email);
-      console.log('Verification email sent to:', email);
-    } catch (error) {
-      console.error('Failed to send verification email:', error);
-    }
+    await this.sendVerificationLink(user.email);
 
-    const payload = { sub: user.id, username: user.username };
-
-    return { access_token: await this.jwtService.signAsync(payload) };
+    return user;
   }
 
   async sendVerificationLink(email: string) {
@@ -102,84 +80,83 @@ export class AuthService {
 
     const text = `Welcome to the application. To confirm the email address, click here: ${url}`;
 
-    try {
-      await this.emailService.sendMail({
-        to: email,
-        subject: 'Email confirmation',
-        text,
-      });
-      return {
-        message: EmailMessages.emailSendSuccess,
-      };
-    } catch (error) {
-      console.error('Failed to send verification email', error);
-      throw new Error(EmailMessages.emailSendFailed);
-    }
+    await this.emailService.sendMail({
+      to: email,
+      subject: 'Email confirmation',
+      text,
+    });
+    return {
+      message: EmailMessages.emailSendSuccess,
+    };
   }
   async verify(token: string) {
-    try {
-      const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
-        secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
-      });
+    const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
+      secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
+    });
 
-      const record = await this.emailVerificationRepo.findOneByOrFail({
-        token,
-      });
+    const record = await this.emailVerificationRepo.findOne({
+      where: { token },
+    });
 
-      if (record.expiresAt < new Date()) {
-        throw new BadRequestException('Token has expired');
-      }
-
-      await this.emailVerificationRepo.save(record);
-
-      const user = await this.userRepository.findOne({
-        where: {
-          email: payload.email,
-        },
-      });
-      if (!user) throw new Error('User not found');
-
-      await this.userRepository.update(user.id, { verifiedAt: new Date() });
-
-      await this.emailVerificationRepo.delete({ token });
-
-      return { message: EmailMessages.emailVerifySuccess };
-    } catch (error) {
-      throw new BadRequestException({
-        message: (error as Error)?.message,
-      });
+    if (!record) {
+      throw new NotFoundException('Token not found or has expired');
     }
+
+    if (record.expiresAt < new Date()) {
+      throw new BadRequestException('Token has expired');
+    }
+
+    await this.emailVerificationRepo.save(record);
+
+    const user = await this.userRepository.findOne({
+      where: {
+        email: payload.email,
+      },
+    });
+    if (!user) throw new Error('User not found');
+
+    await this.userRepository.update(user.id, { verifiedAt: new Date() });
+
+    await this.emailVerificationRepo.delete({ token });
+
+    return { message: EmailMessages.emailVerifySuccess };
   }
 
   async login(
     loginRequestData: LoginRequestData,
   ): Promise<{ accessToken: string }> {
-    try {
-      const user = await this.userRepository.findOne({
-        where: {
-          email: loginRequestData.email,
-        },
-      });
-      if (!user) {
-        throw new BadRequestException('User not found');
-      }
-
-      const match = await bcrypt.compare(
-        loginRequestData.password,
-        user.password,
-      );
-      const payload = { sub: user.id, username: user.username };
-
-      if (match) {
-        return { accessToken: await this.jwtService.signAsync(payload) };
-      } else {
-        throw new BadRequestException('Invalid email or password');
-      }
-    } catch (error) {
-      throw new BadRequestException({
-        message: 'Something went wrong during login',
-        error: (error as Error)?.message,
-      });
+    const user = await this.userRepository.findOne({
+      where: {
+        email: loginRequestData.email,
+      },
+    });
+    if (!user) {
+      throw new BadRequestException('User not found');
     }
+
+    if (user.verifiedAt === null) {
+      throw new BadRequestException(
+        'User not verified. Please verify before login',
+      );
+    }
+
+    const match = await bcrypt.compare(
+      loginRequestData.password,
+      user.password,
+    );
+    const payload = { sub: user.id, username: user.username };
+
+    if (match) {
+      return { accessToken: await this.jwtService.signAsync(payload) };
+    } else {
+      throw new BadRequestException('Invalid email or password');
+    }
+  }
+
+  async validateToken(token: string): Promise<JwtPayload> {
+    const decoded = await this.jwtService.verifyAsync<JwtPayload>(token, {
+      secret: process.env.JWT_SECRET,
+    });
+    return decoded;
   }
 }

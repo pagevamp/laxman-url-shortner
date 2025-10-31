@@ -18,9 +18,11 @@ export class EmailService {
   async sendMail(options: Mail.Options) {
     try {
       await this.nodemailerTransport.sendMail(options);
-    } catch (error) {
-      console.error('Failed to send email: ', error);
-      throw new InternalServerErrorException('Failed to send email');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new InternalServerErrorException(
+        'Failed to send email: ' + message,
+      );
     }
   }
 }
