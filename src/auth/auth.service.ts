@@ -1,33 +1,42 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { UserService } from '../user/user.service';
 import { SignupRequestData } from './dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
-import { HashService } from './ hash.service';
+import { HashService } from './hash.service';
+import { Repository } from 'typeorm';
+import { User } from 'src/user/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { EmailService } from '../email/email.service';
+import { EmailVerificationPayload } from './interface';
+import { EmailVerification } from 'src/auth/email-verification.entity';
+import { EmailMessages } from '../config/messages';
+import { ResendEmailVerificationRequestData } from './dto/resend-verification-dto';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly userService: UserService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly hashService: HashService,
+    private readonly emailService: EmailService,
+    @InjectRepository(EmailVerification)
+    private readonly emailVerificationRepo: Repository<EmailVerification>,
   ) {}
 
   async signUp(
     signUpUserDto: SignupRequestData,
-  ): Promise<{ access_token: string }> {
-    const userByUsername = await this.userService.findOneByField(
-      'username',
-      signUpUserDto.username,
-    );
+  ): Promise<{ accessToken: string }> {
+    const userByUsername = await this.userRepository.findOne({
+      where: { username: signUpUserDto.username },
+    });
 
     if (userByUsername) {
       throw new BadRequestException('Username already taken');
     }
 
-    const userByEmail = await this.userService.findOneByField(
-      'email',
-      signUpUserDto.email,
-    );
+    const userByEmail = await this.userRepository.findOne({
+      where: { email: signUpUserDto.email },
+    });
 
     if (userByEmail) {
       throw new BadRequestException('Email already taken');
@@ -39,15 +48,111 @@ export class AuthService {
 
     const { email, fullName, username } = signUpUserDto;
 
-    const user = await this.userService.create({
+    const user = this.userRepository.create({
       password: hashedPassword,
       email,
       fullName,
       username,
     });
 
+    await this.userRepository.save(user);
+
+    try {
+      const requestData = { email: email };
+      await this.sendVerificationLink(requestData);
+      console.log('Verification email sent to:', email);
+    } catch (error) {
+      console.error('Failed to send verification email:', error);
+    }
+
     const payload = { sub: user.id, username: user.username };
 
-    return { access_token: await this.jwtService.signAsync(payload) };
+    return { accessToken: await this.jwtService.signAsync(payload) };
+  }
+
+  async sendVerificationLink(
+    resendEmailVerificationRequestData: ResendEmailVerificationRequestData,
+  ) {
+    const email = resendEmailVerificationRequestData.email;
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (user.verifiedAt) {
+      throw new BadRequestException('User is already verified');
+    }
+
+    const payload: EmailVerificationPayload = {
+      email,
+    };
+    const token = this.jwtService.sign(payload, {
+      secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
+      expiresIn: 3600,
+    });
+
+    const expiresAt = new Date(Date.now() + 3600 * 1000);
+
+    const emailVerification = this.emailVerificationRepo.create({
+      userId: user.id,
+      token,
+      expiresAt,
+    });
+
+    await this.emailVerificationRepo.save(emailVerification);
+
+    const url = `${process.env.EMAIL_CONFIRMATION_URL}?token=${token}`;
+
+    const text = `Welcome to the application. To confirm the email address, click here: ${url}`;
+
+    try {
+      await this.emailService.sendMail({
+        to: email,
+        subject: 'Email confirmation',
+        text,
+      });
+      return {
+        message: EmailMessages.emailSendSuccess,
+      };
+    } catch (error) {
+      console.error('Failed to send verification email', error);
+      throw new Error(EmailMessages.emailSendFailed);
+    }
+  }
+
+  async verify(token: string) {
+    try {
+      const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
+        secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
+      });
+
+      const record = await this.emailVerificationRepo.findOneByOrFail({
+        token,
+      });
+
+      if (record.expiresAt < new Date()) {
+        throw new BadRequestException('Token has expired');
+      }
+
+      await this.emailVerificationRepo.save(record);
+
+      const user = await this.userRepository.findOne({
+        where: {
+          email: payload.email,
+        },
+      });
+      if (!user) throw new Error('User not found');
+
+      user.verifiedAt = new Date();
+
+      await this.userRepository.update(user.id, user);
+
+      await this.emailVerificationRepo.delete({ token });
+
+      return { message: EmailMessages.emailVerifySuccess };
+    } catch (error) {
+      console.error('Verification error:', error);
+      throw new BadRequestException(EmailMessages.emailVerifyFailed);
+    }
   }
 }

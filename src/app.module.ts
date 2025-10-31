@@ -3,14 +3,17 @@ import { AppController } from './app.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
-import typeORMConfig from './typeORMConfig';
+import { EmailModule } from './email/email.module';
+import dataSource from './data-source';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({ ...typeORMConfig }),
+    TypeOrmModule.forRoot(dataSource.options),
     UserModule,
     AuthModule,
+    EmailModule,
   ],
   controllers: [AppController],
+  providers: [],
 })
 export class AppModule {}
