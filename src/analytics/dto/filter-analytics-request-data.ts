@@ -1,4 +1,5 @@
 import { IsDate, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class FilterAnalyticsRequestData {
   @IsOptional()
@@ -23,15 +24,12 @@ export class FilterAnalyticsRequestData {
   ip?: string;
 
   @IsOptional()
-  @IsDate({ message: 'Redirected date must be a valid date' })
-  redirectedAt?: Date;
-
-  @IsOptional()
-  @IsDate({ message: 'Starting date must be a valid date' })
-  @IsOptional()
+  @Type(() => Date)
+  @IsDate({ message: 'Invalid start date' })
   startDate?: Date;
 
-  @IsDate({ message: 'End date must be a valid date' })
   @IsOptional()
+  @Type(() => Date)
+  @IsDate({ message: 'Invalid end date' })
   endDate?: Date;
 }

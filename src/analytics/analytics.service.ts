@@ -58,18 +58,25 @@ export class AnalyticsService {
     await this.analyticsRepo.save(analytics);
   }
 
-  async getAnalytics(requestData: FilterAnalyticsRequestData) {
-    const qb = this.analyticsRepo.createQueryBuilder('a');
+  async getAnalytics(requestData: FilterAnalyticsRequestData, userId: string) {
+    const qb = this.analyticsRepo
+      .createQueryBuilder('a')
+      .innerJoin('a.url', 'url');
+
+    qb.andWhere('url.userId=:userId', { userId });
 
     if (requestData.startDate && requestData.endDate) {
       qb.andWhere('a.redirectedAt BETWEEN :start AND :end', {
-        start: requestData.startDate,
-        end: requestData.endDate,
+        start: new Date(requestData.startDate),
+        end: new Date(requestData.endDate),
       });
     }
 
     if (requestData.browser) {
       qb.andWhere('a.browser = :browser', { browser: requestData.browser });
+    }
+    if (requestData.country) {
+      qb.andWhere('a.country = :country', { country: requestData.country });
     }
 
     if (requestData.device) {
