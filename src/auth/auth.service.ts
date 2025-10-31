@@ -1,13 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { SignupRequestData } from './dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
-import { HashService } from './hash.service';
+import { EmailService } from 'src/email/email.service';
+import { CryptoService } from './crypto.service';
+import { LoginRequestData } from './dto/login-user-dto';
+import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { User } from 'src/user/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EmailService } from '../email/email.service';
+import { EmailVerification } from './email-verification.entity';
 import { EmailVerificationPayload } from './interface';
-import { EmailVerification } from 'src/auth/email-verification.entity';
 import { EmailMessages } from '../config/messages';
 import { ResendEmailVerificationRequestData } from './dto/resend-verification-dto';
 
@@ -17,10 +19,10 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
-    private readonly hashService: HashService,
     private readonly emailService: EmailService,
     @InjectRepository(EmailVerification)
     private readonly emailVerificationRepo: Repository<EmailVerification>,
+    private readonly cryptoService: CryptoService,
   ) {}
 
   async signUp(
@@ -42,7 +44,7 @@ export class AuthService {
       throw new BadRequestException('Email already taken');
     }
 
-    const hashedPassword = await this.hashService.hashPassword(
+    const hashedPassword = await this.cryptoService.hashPassword(
       signUpUserDto.password,
     );
 
@@ -119,7 +121,6 @@ export class AuthService {
       throw new Error(EmailMessages.emailSendFailed);
     }
   }
-
   async verify(token: string) {
     try {
       const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
@@ -153,6 +154,36 @@ export class AuthService {
     } catch (error) {
       console.error('Verification error:', error);
       throw new BadRequestException(EmailMessages.emailVerifyFailed);
+    }
+  }
+
+  async login(
+    loginRequestData: LoginRequestData,
+  ): Promise<{ access_token: string }> {
+    try {
+      const user = await this.userRepository.findOne({
+        where: {
+          email: loginRequestData.email,
+        },
+      });
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      const match = await bcrypt.compare(
+        loginRequestData.password,
+        user.password,
+      );
+      const payload = { sub: user.id, username: user.username };
+
+      if (match) {
+        return { access_token: await this.jwtService.signAsync(payload) };
+      } else {
+        throw new BadRequestException('Invalid email or password');
+      }
+    } catch (error) {
+      console.error(error);
+      throw error;
     }
   }
 }
