@@ -45,13 +45,14 @@ export class UrlController {
 
   // @UseGuards(AuthGuard)
   @Get(':shortCode')
+  @HttpCode(302)
   @Redirect()
   async redirect(
     @Param('shortCode') shortCode: string,
     @Req() req: RequestWithUser,
   ) {
     const { longCode } = await this.urlService.getLongUrl(shortCode, req);
-    return { url: longCode, statusCode: 302 };
+    return { url: longCode };
   }
 
   @UseGuards(GuardService)
