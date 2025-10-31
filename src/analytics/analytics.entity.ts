@@ -34,7 +34,7 @@ export class UrlAnalytics {
   @Column({ type: 'varchar', length: 255, nullable: true, name: 'user_agent' })
   readonly userAgent: string;
 
-  @CreateDateColumn({ type: 'timestamptz', name: 'redirected_at' })
+  @CreateDateColumn({ type: 'timestamp with time zone', name: 'redirected_at' })
   readonly redirectedAt: Date;
 
   @ManyToOne(() => Url, { onDelete: 'CASCADE' })
