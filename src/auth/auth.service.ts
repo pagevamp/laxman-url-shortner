@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EmailService } from '../email/email.service';
 import { EmailVerificationPayload } from './interface';
 import { EmailVerification } from 'src/auth/email-verification.entity';
-import { EmailMessages } from './messages';
+import { EmailMessages } from '../config/messages';
 import { ResendEmailVerificationRequestData } from './dto/resend-verification-dto';
 
 @Injectable()
@@ -25,7 +25,7 @@ export class AuthService {
 
   async signUp(
     signUpUserDto: SignupRequestData,
-  ): Promise<{ access_token: string }> {
+  ): Promise<{ accessToken: string }> {
     const userByUsername = await this.userRepository.findOne({
       where: { username: signUpUserDto.username },
     });
@@ -67,7 +67,7 @@ export class AuthService {
 
     const payload = { sub: user.id, username: user.username };
 
-    return { access_token: await this.jwtService.signAsync(payload) };
+    return { accessToken: await this.jwtService.signAsync(payload) };
   }
 
   async sendVerificationLink(
