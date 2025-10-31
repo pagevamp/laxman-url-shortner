@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { SignupRequestData } from './dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from 'src/email/email.service';
@@ -90,9 +94,13 @@ export class AuthService {
       secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
     });
 
-    const record = await this.emailVerificationRepo.findOneByOrFail({
-      token,
+    const record = await this.emailVerificationRepo.findOne({
+      where: { token },
     });
+
+    if (!record) {
+      throw new NotFoundException('Token not found or has expired');
+    }
 
     if (record.expiresAt < new Date()) {
       throw new BadRequestException('Token has expired');

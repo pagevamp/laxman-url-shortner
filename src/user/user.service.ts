@@ -25,13 +25,17 @@ export class UserService {
     field: K,
     value: User[K],
   ): Promise<User> {
-    if (value === undefined || value === null) {
+    if (!value) {
       throw new BadRequestException(`Invalid value for field: ${field}`);
     }
 
-    const user = await this.userRepository.findOneByOrFail({ [field]: value });
-
-    return user || null;
+    const user = await this.userRepository.findOne({
+      where: { [field]: value },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 
   async create(signUpUserDto: SignupRequestData): Promise<User> {
@@ -55,7 +59,10 @@ export class UserService {
     return await this.userRepository.save(user);
   }
 
-  async update(userId: string, updateData: Partial<User>): Promise<User> {
+  async update(
+    userId: string,
+    updateData: Partial<User>,
+  ): Promise<{ message: string }> {
     const existingUser = await this.userRepository.findOneBy({ id: userId });
     if (!existingUser) {
       throw new NotFoundException(`User with ID ${userId} not found`);
@@ -63,6 +70,6 @@ export class UserService {
 
     await this.userRepository.update(userId, updateData);
 
-    return await this.userRepository.findOneByOrFail({ id: userId });
+    return { message: 'User updated succesfully' };
   }
 }
