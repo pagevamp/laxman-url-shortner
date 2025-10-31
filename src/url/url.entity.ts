@@ -55,7 +55,7 @@ export class Url {
     type: 'timestamp with time zone',
     name: 'expires_at',
   })
-  readonly expiresAt?: Date;
+  readonly expiresAt: Date;
 
   @CreateDateColumn({ type: 'timestamp with time zone', name: 'created_at' })
   readonly createdAt: Date;
