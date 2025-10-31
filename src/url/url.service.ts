@@ -123,9 +123,6 @@ export class UrlService {
       throw new NotFoundException(`Url with ID ${urlId} not found`);
     }
 
-    const deletedUrl = await this.urlRepository.delete({ id: urlId });
-    if (deletedUrl.affected === 0) {
-      throw new NotFoundException('URL not found');
-    }
+    await this.urlRepository.delete({ id: urlId });
   }
 }

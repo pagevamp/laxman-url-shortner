@@ -69,7 +69,7 @@ export class UrlController {
   }
 
   @UseGuards(GuardService)
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async deleteUrl(
     @Req() request: RequestWithUser,
