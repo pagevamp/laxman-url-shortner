@@ -5,7 +5,6 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
-  DeleteDateColumn,
 } from 'typeorm';
 import { Url } from 'src/url/url.entity';
 
@@ -37,13 +36,6 @@ export class UrlAnalytics {
 
   @CreateDateColumn({ type: 'timestamp with time zone', name: 'redirected_at' })
   readonly redirectedAt: Date;
-
-  @DeleteDateColumn({
-    type: 'timestamp with time zone',
-    nullable: true,
-    name: 'deleted_at',
-  })
-  readonly deletedAt?: Date | null;
 
   @ManyToOne(() => Url, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'url_id' })
