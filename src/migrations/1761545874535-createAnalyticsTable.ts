@@ -5,7 +5,7 @@ export class CreateAnalyticsTable1761545874535 implements MigrationInterface {
     await queryRunner.query(`
       CREATE TABLE "url_analytics" (
         "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-        "url_id" uuid ,
+        "url_id" uuid NOT NULL,
         "redirected_at" timestamp with time zone DEFAULT NOW(),
         "ip" VARCHAR(100) ,
         "country" VARCHAR(40) ,
