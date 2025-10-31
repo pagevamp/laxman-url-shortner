@@ -26,12 +26,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(@Body() loginRequestData: LoginRequestData) {
-    try {
-      return await this.authService.login(loginRequestData);
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
+    return await this.authService.login(loginRequestData);
   }
 
   @Post('resend-verification')
