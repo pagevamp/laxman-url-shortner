@@ -24,12 +24,12 @@ export class UserService {
   async findOneByField<K extends keyof User>(
     field: K,
     value: User[K],
-  ): Promise<User | null> {
+  ): Promise<User> {
     if (value === undefined || value === null) {
       throw new BadRequestException(`Invalid value for field: ${field}`);
     }
 
-    const user = await this.userRepository.findOneBy({ [field]: value });
+    const user = await this.userRepository.findOneByOrFail({ [field]: value });
 
     return user || null;
   }

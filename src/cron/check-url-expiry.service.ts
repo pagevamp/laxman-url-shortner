@@ -5,6 +5,7 @@ import { Url } from 'src/url/url.entity';
 import { IsNull, LessThan, Repository } from 'typeorm';
 import { EmailService } from '../email/email.service';
 import { User } from 'src/user/user.entity';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class CheckUrlExpiry {
@@ -14,6 +15,7 @@ export class CheckUrlExpiry {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly emailService: EmailService,
+    private readonly userService: UserService,
   ) {}
 
   @Cron(CronExpression.EVERY_30_SECONDS)
@@ -22,9 +24,7 @@ export class CheckUrlExpiry {
       where: { expiresAt: LessThan(new Date()), expiryAlertedAt: IsNull() },
     });
     for (const url of expiredUrls) {
-      const user = await this.userRepository.findOneByOrFail({
-        id: url.userId,
-      });
+      const user = await this.userService.findOneByField('id', url.userId);
       await this.emailService.sendMail({
         to: user.email,
         subject: `Your ${url.title} URL has expired`,

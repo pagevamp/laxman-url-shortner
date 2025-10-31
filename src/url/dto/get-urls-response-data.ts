@@ -1,4 +1,4 @@
-export class GetUrlRequestData {
+export class GetUrlResponseData {
   title: string;
   shortCode: string;
   expiresAt: Date;

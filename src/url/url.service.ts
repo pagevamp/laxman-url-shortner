@@ -14,7 +14,7 @@ import {
   hashString,
 } from './utils/crypto-helper';
 import { UserService } from '../user/user.service';
-import { GetUrlRequestData } from './dto/get-urls-request-data';
+import { GetUrlResponseData } from './dto/get-urls-response-data';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { Request } from 'express';
 import { RequestWithUser } from 'src/types/RequestWithUser';
@@ -77,11 +77,11 @@ export class UrlService {
     return { longCode: decryptedUrl };
   }
 
-  async getAll(userId: string): Promise<GetUrlRequestData[]> {
+  async getAll(userId: string): Promise<GetUrlResponseData[]> {
     const urls = (await this.urlRepository.find({
       where: { userId: userId },
       select: ['title', 'shortCode', 'expiresAt'],
-    })) as GetUrlRequestData[];
+    })) as GetUrlResponseData[];
     const result = urls.map((item) => ({
       ...item,
       shortCode: `${process.env.REDIRECT_BASE_URL}${item.shortCode}`,
