@@ -1,5 +1,5 @@
-import { IsDate, IsOptional } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsNotEmpty, IsOptional } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class FilterAnalyticsRequestData {
   @IsOptional()
@@ -24,12 +24,37 @@ export class FilterAnalyticsRequestData {
   ip?: string;
 
   @IsOptional()
-  @Type(() => Date)
-  @IsDate({ message: 'Invalid start date' })
+  @Transform(({ value }: { value: unknown }): Date | undefined => {
+    if (typeof value === 'string') {
+      const normalized = value
+        .replace(/\s{2,}/g, ' ')
+        .replace(' 00:00', '+00:00');
+      return new Date(normalized);
+    }
+
+    if (value instanceof Date) {
+      return value;
+    }
+
+    return undefined;
+  })
   startDate?: Date;
 
   @IsOptional()
-  @Type(() => Date)
-  @IsDate({ message: 'Invalid end date' })
+  @Transform(({ value }: { value: unknown }): Date | undefined => {
+    if (typeof value === 'string') {
+      const normalized = value
+        .replace(/\s{2,}/g, ' ')
+        .replace(' 00:00', '+00:00');
+      return new Date(normalized);
+    }
+
+    if (value instanceof Date) {
+      return value;
+    }
+
+    return undefined;
+  })
+  @IsNotEmpty()
   endDate?: Date;
 }
