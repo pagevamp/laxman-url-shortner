@@ -22,6 +22,9 @@ export class UrlAnalytics {
   @Column({ type: 'varchar', length: 50, nullable: true, name: 'device' })
   readonly device: string;
 
+  @Column({ type: 'varchar', length: 40, nullable: true, name: 'os' })
+  readonly os: string;
+
   @Column({ type: 'varchar', length: 40, nullable: true, name: 'browser' })
   readonly browser: string;
 

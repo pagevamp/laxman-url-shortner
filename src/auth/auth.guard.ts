@@ -25,9 +25,11 @@ export class AuthGuard implements CanActivate {
     const decoded = await this.authService.validateToken(token);
     request.decodedData = decoded;
     const userData = request.decodedData;
+
     if (!userData) {
       throw new UnauthorizedException('Invalid or missing token');
     }
+
     return true;
   }
 }
