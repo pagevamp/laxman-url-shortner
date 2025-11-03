@@ -1,4 +1,9 @@
-import { IsNotEmpty, IsOptional } from 'class-validator';
+import {
+  IsDateString,
+  isDateString,
+  IsNotEmpty,
+  IsOptional,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class FilterAnalyticsRequestData {
@@ -24,37 +29,16 @@ export class FilterAnalyticsRequestData {
   ip?: string;
 
   @IsOptional()
-  @Transform(({ value }: { value: unknown }): Date | undefined => {
-    if (typeof value === 'string') {
-      const normalized = value
-        .replace(/\s{2,}/g, ' ')
-        .replace(' 00:00', '+00:00');
-      return new Date(normalized);
-    }
-
-    if (value instanceof Date) {
-      return value;
-    }
-
-    return undefined;
+  @IsDateString()
+  @Transform(({ value }) => new Date(value).toUTCString(), {
+    toPlainOnly: true,
   })
   startDate?: Date;
 
   @IsOptional()
-  @Transform(({ value }: { value: unknown }): Date | undefined => {
-    if (typeof value === 'string') {
-      const normalized = value
-        .replace(/\s{2,}/g, ' ')
-        .replace(' 00:00', '+00:00');
-      return new Date(normalized);
-    }
-
-    if (value instanceof Date) {
-      return value;
-    }
-
-    return undefined;
+  @IsDateString()
+  @Transform(({ value }) => new Date(value).toUTCString(), {
+    toPlainOnly: true,
   })
-  @IsNotEmpty()
   endDate?: Date;
 }
