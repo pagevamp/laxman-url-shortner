@@ -4,10 +4,12 @@ import {
   Column,
   CreateDateColumn,
   DeleteDateColumn,
+  Index,
 } from 'typeorm';
 
 @Entity({ name: 'users' })
 export class User {
+  @Index()
   @PrimaryGeneratedColumn('uuid')
   readonly id: string;
 

@@ -8,37 +8,37 @@ import { Transform } from 'class-transformer';
 
 export class FilterAnalyticsRequestData {
   @IsOptional()
-  browser?: string;
+  browser?: string | null;
 
   @IsOptional()
-  device?: string;
+  device?: string | null;
 
   @IsOptional()
-  groupByUrl?: boolean;
+  groupByUrl?: boolean | null;
 
   @IsOptional()
-  urlId?: string;
+  urlId?: string | null;
 
   @IsOptional()
-  os?: string;
+  os?: string | null;
 
   @IsOptional()
-  country?: string;
+  country?: string | null;
 
   @IsOptional()
-  ip?: string;
-
-  @IsOptional()
-  @IsDateString()
-  @Transform(({ value }) => new Date(value).toUTCString(), {
-    toPlainOnly: true,
-  })
-  startDate?: Date;
+  ip?: string | null;
 
   @IsOptional()
   @IsDateString()
   @Transform(({ value }) => new Date(value).toUTCString(), {
     toPlainOnly: true,
   })
-  endDate?: Date;
+  startDate?: Date | null;
+
+  @IsOptional()
+  @IsDateString()
+  @Transform(({ value }) => new Date(value).toUTCString(), {
+    toPlainOnly: true,
+  })
+  endDate?: Date | null;
 }

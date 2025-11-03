@@ -6,10 +6,12 @@ import {
   CreateDateColumn,
   JoinColumn,
   OneToOne,
+  Index,
 } from 'typeorm';
 
 @Entity('email_verifications')
 export class EmailVerification {
+  @Index()
   @PrimaryGeneratedColumn('uuid')
   readonly id: string;
 

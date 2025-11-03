@@ -7,11 +7,13 @@ import {
   ManyToOne,
   JoinColumn,
   DeleteDateColumn,
+  Index,
 } from 'typeorm';
 import { User } from 'src/user/user.entity';
 
 @Entity({ name: 'urls' })
 export class Url {
+  @Index()
   @PrimaryGeneratedColumn('uuid')
   readonly id: string;
 
