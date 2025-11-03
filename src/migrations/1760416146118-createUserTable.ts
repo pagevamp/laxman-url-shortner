@@ -11,7 +11,8 @@ export class CreateUsersTable1760500000000 implements MigrationInterface {
         "password" varchar NOT NULL,
         "verified_at" timestamp with time zone DEFAULT NULL,
         "created_at" timestamp with time zone DEFAULT now(),
-        "last_login_at" timestamp with time zone DEFAULT NULL
+        "last_login_at" timestamp with time zone DEFAULT NULL,
+        "deleted_at" timestamp with time zone DEFAULT NULL
       );
     `);
   }

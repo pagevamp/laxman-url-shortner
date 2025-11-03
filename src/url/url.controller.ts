@@ -13,14 +13,13 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import type Request from 'express';
 import { UrlService } from './url.service';
 import { CreateUrlRequestData } from './dto/create-url-request-data';
 import { AuthGuard } from 'src/auth/auth.guard';
 import type { RequestWithUser } from 'src/types/RequestWithUser';
 import { UpdateUrlRequestData } from './dto/update-url-request-data';
 
-@Controller('url')
+@Controller('urls')
 export class UrlController {
   constructor(private readonly urlService: UrlService) {}
 

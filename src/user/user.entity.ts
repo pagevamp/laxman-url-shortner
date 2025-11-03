@@ -3,10 +3,13 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
+  Index,
 } from 'typeorm';
 
 @Entity({ name: 'users' })
 export class User {
+  @Index()
   @PrimaryGeneratedColumn('uuid')
   readonly id: string;
 
@@ -35,6 +38,13 @@ export class User {
     name: 'created_at',
   })
   readonly createdAt: Date;
+
+  @DeleteDateColumn({
+    type: 'timestamp with time zone',
+    nullable: true,
+    name: 'deleted_at',
+  })
+  readonly deletedAt?: Date | null;
 
   @Column({
     type: 'timestamp with time zone',

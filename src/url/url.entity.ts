@@ -6,11 +6,14 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  DeleteDateColumn,
+  Index,
 } from 'typeorm';
 import { User } from 'src/user/user.entity';
 
 @Entity({ name: 'urls' })
 export class Url {
+  @Index()
   @PrimaryGeneratedColumn('uuid')
   readonly id: string;
 
@@ -40,7 +43,7 @@ export class Url {
   })
   readonly expiryAlertedAt: Date | null;
 
-  @Column({
+  @DeleteDateColumn({
     type: 'timestamp with time zone',
     nullable: true,
     name: 'deleted_at',
