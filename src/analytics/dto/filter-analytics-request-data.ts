@@ -25,15 +25,23 @@ export class FilterAnalyticsRequestData {
 
   @IsOptional()
   @IsDateString()
-  @Transform(({ value }) => new Date(value).toUTCString(), {
-    toPlainOnly: true,
-  })
+  @Transform(
+    ({ value }: { value: string }) => {
+      if (!value) return null;
+      return new Date(value).toUTCString();
+    },
+    { toPlainOnly: true },
+  )
   startDate?: Date | null;
 
   @IsOptional()
   @IsDateString()
-  @Transform(({ value }) => new Date(value).toUTCString(), {
-    toPlainOnly: true,
-  })
+  @Transform(
+    ({ value }: { value: string }) => {
+      if (!value) return null;
+      return new Date(value).toUTCString();
+    },
+    { toPlainOnly: true },
+  )
   endDate?: Date | null;
 }
