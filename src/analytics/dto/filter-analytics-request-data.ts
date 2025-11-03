@@ -1,9 +1,4 @@
-import {
-  IsDateString,
-  isDateString,
-  IsNotEmpty,
-  IsOptional,
-} from 'class-validator';
+import { IsDateString, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class FilterAnalyticsRequestData {
