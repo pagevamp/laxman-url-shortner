@@ -59,13 +59,9 @@ export class AuthService {
 
     await this.userRepository.save(user);
 
-    try {
-      const requestData = { email: email };
-      await this.sendVerificationLink(requestData);
-      console.log('Verification email sent to:', email);
-    } catch (error) {
-      console.error('Failed to send verification email:', error);
-    }
+    const requestData = { email: email };
+    await this.sendVerificationLink(requestData);
+    console.log('Verification email sent to:', email);
 
     const payload = { sub: user.id, username: user.username };
 
@@ -107,83 +103,67 @@ export class AuthService {
 
     const text = `Welcome to the application. To confirm the email address, click here: ${url}`;
 
-    try {
-      await this.emailService.sendMail({
-        to: email,
-        subject: 'Email confirmation',
-        text,
-      });
-      return {
-        message: EmailMessages.emailSendSuccess,
-      };
-    } catch (error) {
-      console.error('Failed to send verification email', error);
-      throw new Error(EmailMessages.emailSendFailed);
-    }
+    await this.emailService.sendMail({
+      to: email,
+      subject: 'Email confirmation',
+      text,
+    });
+    return {
+      message: EmailMessages.emailSendSuccess,
+    };
   }
   async verify(token: string) {
-    try {
-      const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
-        secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
-      });
+    const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
+      secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
+    });
 
-      const record = await this.emailVerificationRepo.findOneByOrFail({
-        token,
-      });
+    const record = await this.emailVerificationRepo.findOneByOrFail({
+      token,
+    });
 
-      if (record.expiresAt < new Date()) {
-        throw new BadRequestException('Token has expired');
-      }
-
-      await this.emailVerificationRepo.save(record);
-
-      const user = await this.userRepository.findOne({
-        where: {
-          email: payload.email,
-        },
-      });
-      if (!user) throw new Error('User not found');
-
-      user.verifiedAt = new Date();
-
-      await this.userRepository.update(user.id, user);
-
-      await this.emailVerificationRepo.delete({ token });
-
-      return { message: EmailMessages.emailVerifySuccess };
-    } catch (error) {
-      console.error('Verification error:', error);
-      throw new BadRequestException(EmailMessages.emailVerifyFailed);
+    if (record.expiresAt < new Date()) {
+      throw new BadRequestException('Token has expired');
     }
+
+    await this.emailVerificationRepo.save(record);
+
+    const user = await this.userRepository.findOne({
+      where: {
+        email: payload.email,
+      },
+    });
+    if (!user) throw new Error('User not found');
+
+    user.verifiedAt = new Date();
+
+    await this.userRepository.update(user.id, user);
+
+    await this.emailVerificationRepo.delete({ token });
+
+    return { message: EmailMessages.emailVerifySuccess };
   }
 
   async login(
     loginRequestData: LoginRequestData,
   ): Promise<{ access_token: string }> {
-    try {
-      const user = await this.userRepository.findOne({
-        where: {
-          email: loginRequestData.email,
-        },
-      });
-      if (!user) {
-        throw new BadRequestException('User not found');
-      }
-
-      const match = await bcrypt.compare(
-        loginRequestData.password,
-        user.password,
-      );
-      const payload = { sub: user.id, username: user.username };
-
-      if (match) {
-        return { access_token: await this.jwtService.signAsync(payload) };
-      } else {
-        throw new BadRequestException('Invalid email or password');
-      }
-    } catch (error) {
-      console.error(error);
-      throw error;
+    const user = await this.userRepository.findOne({
+      where: {
+        email: loginRequestData.email,
+      },
+    });
+    if (!user) {
+      throw new BadRequestException('User not found');
     }
+
+    const match = await bcrypt.compare(
+      loginRequestData.password,
+      user.password,
+    );
+    const payload = { sub: user.id, username: user.username };
+
+    if (!match) {
+      throw new BadRequestException('Invalid email or password');
+    }
+    return { access_token: await this.jwtService.signAsync(payload) };
   }
 }
