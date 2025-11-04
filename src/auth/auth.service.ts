@@ -81,6 +81,10 @@ export class AuthService {
       throw new BadRequestException('User is already verified');
     }
 
+    await this.emailVerificationRepo.delete({
+      userId: user.id,
+    });
+
     const payload: EmailVerificationPayload = {
       email,
     };
