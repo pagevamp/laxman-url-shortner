@@ -8,7 +8,7 @@ export class EmailService {
     this.nodemailerTransport = createTransport({
       host: 'smtp.gmail.com',
       port: 587,
-      secure: false,
+      secure: true,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -18,11 +18,9 @@ export class EmailService {
   async sendMail(options: Mail.Options) {
     try {
       await this.nodemailerTransport.sendMail(options);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      throw new InternalServerErrorException(
-        'Failed to send email: ' + message,
-      );
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Unable to send mail');
     }
   }
 }
