@@ -84,6 +84,11 @@ export class AuthService {
     const payload: EmailVerificationPayload = {
       email,
     };
+
+    await this.emailVerificationRepo.delete({
+      userId: user.id,
+    });
+
     const token = this.jwtService.sign(payload, {
       secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
       expiresIn: 3600,
@@ -112,6 +117,7 @@ export class AuthService {
       message: EmailMessages.emailSendSuccess,
     };
   }
+
   async verify(token: string) {
     const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
       secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,

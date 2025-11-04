@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { RateLimitMiddleware } from './middleware/rate-limit-midddleware';
 
 async function bootstrap() {
+  const port = process.env.PORT || 3000;
   const app = await NestFactory.create(AppModule);
   app.use(new RateLimitMiddleware().use);
   app.useGlobalPipes(
@@ -12,7 +13,7 @@ async function bootstrap() {
       whitelist: true,
     }),
   );
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(port, '0.0.0.0');
 }
 bootstrap()
   .then(() => {
