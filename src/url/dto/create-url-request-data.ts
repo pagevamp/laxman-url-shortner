@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsNotEmpty, IsString } from 'class-validator';
+import { IsDate, IsNotEmpty, IsString, IsUrl } from 'class-validator';
 
 export class CreateUrlRequestData {
   @IsNotEmpty()
@@ -9,6 +9,7 @@ export class CreateUrlRequestData {
 
   @IsNotEmpty({ message: 'Original URL cannot be empty' })
   @IsString({ message: 'Original URL must be a string' })
+  @IsUrl()
   originalUrl: string;
 
   @IsNotEmpty({ message: 'URL title cannot be empty' })

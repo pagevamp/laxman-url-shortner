@@ -101,6 +101,12 @@ export class AnalyticsService {
       qb.andWhere('a.os = :os', { os: requestData.os });
     }
 
+    if (requestData.ipAddress) {
+      qb.andWhere('a.ipAddress = :ipAddress', {
+        ipAddress: requestData.ipAddress,
+      });
+    }
+
     if (requestData.groupByUrl) {
       qb.select('a.url', 'url')
         .addSelect('COUNT(*)', 'hits')
