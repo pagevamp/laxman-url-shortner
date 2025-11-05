@@ -67,7 +67,9 @@ export class AnalyticsService {
   async getAnalytics(requestData: FilterAnalyticsRequestData, userId: string) {
     const qb = this.analyticsRepo
       .createQueryBuilder('a')
-      .innerJoin('a.url', 'url');
+      .innerJoin('a.url', 'url')
+      .take(10)
+      .skip(10);
 
     qb.andWhere('url.userId=:userId', { userId });
 
@@ -96,7 +98,7 @@ export class AnalyticsService {
 
     const groupColumns: string[] = [];
 
-    if (requestData.groupByUrl) groupColumns.push('a.url_id'); // map URL to urlId
+    if (requestData.groupByUrl) groupColumns.push('a.url_id');
     if (requestData.groupByDevice) groupColumns.push('a.device');
     if (requestData.groupByOs) groupColumns.push('a.os');
     if (requestData.groupByBrowser) groupColumns.push('a.browser');
@@ -112,6 +114,6 @@ export class AnalyticsService {
       return qb.getRawMany();
     }
 
-    return qb.getMany();
+    return await qb.getMany();
   }
 }

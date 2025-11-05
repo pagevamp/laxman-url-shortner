@@ -22,7 +22,7 @@ export class CreateEmailVerificationsTable1760600000000
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      ROP INDEX IF EXISTS "IDX_email_verifications_token";
+      DROP INDEX IF EXISTS "IDX_email_verifications_token";
       DROP TABLE "email_verifications";`);
   }
 }
