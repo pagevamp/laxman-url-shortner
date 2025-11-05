@@ -14,7 +14,7 @@ import { EmailMessages } from './messages';
 import { JwtPayload } from 'src/types/JwtPayload';
 import { ResendVerificationRequestData } from './dto/resend-verification-request-data';
 import { VerifyTokenRequestData } from './dto/verify-token-request-data';
-import { SendMailRequestdata } from '../email/dto/send-mail-request-data';
+import { SendMailRequestData } from '../email/dto/send-mail-request-data';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { SendVerificationMailEvent } from 'src/event/send-verification-mail.event';
 
@@ -117,7 +117,7 @@ export class AuthService {
 
     const text = `Welcome to the application. To confirm the email address, click here: ${url}`;
 
-    const sendMailRequestdata: SendMailRequestdata = {
+    const sendMailRequestdata: SendMailRequestData = {
       to: email,
       subject: 'Email confirmation',
       text,
