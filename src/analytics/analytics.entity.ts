@@ -9,9 +9,11 @@ import {
 } from 'typeorm';
 import { Url } from 'src/url/url.entity';
 
+@Index('IDX_url_analytics_url_id', ['urlId'])
+@Index('IDX_url_analytics_redirected_at', ['redirectedAt'])
+@Index('IDX_url_analytics_url_id_redirected_at', ['urlId', 'redirectedAt'])
 @Entity({ name: 'url_analytics' })
 export class UrlAnalytics {
-  @Index()
   @PrimaryGeneratedColumn('uuid')
   readonly id: string;
 

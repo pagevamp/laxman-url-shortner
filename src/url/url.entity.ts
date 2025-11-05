@@ -11,9 +11,11 @@ import {
 } from 'typeorm';
 import { User } from 'src/user/user.entity';
 
+@Index('IDX_urls_user_id', ['userId'])
+@Index('IDX_urls_expires_at', ['expiresAt'])
+@Index('IDX_urls_is_active', ['isActive'])
 @Entity({ name: 'urls' })
 export class Url {
-  @Index()
   @PrimaryGeneratedColumn('uuid')
   readonly id: string;
 
