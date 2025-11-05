@@ -71,20 +71,13 @@ export class AnalyticsService {
 
     qb.andWhere('url.userId=:userId', { userId });
 
-    if (requestData.startDate && requestData.endDate) {
-      qb.andWhere('a.redirectedAt BETWEEN :start AND :end', {
-        start: requestData.startDate,
-        end: requestData.endDate,
-      });
-    }
+    const start = requestData.startDate || new Date(0);
+    const end = requestData.endDate || new Date();
 
-    if (requestData.startDate) {
-      qb.andWhere('a.redirectedAt >= :start', { start: requestData.startDate });
-    }
-
-    if (requestData.endDate) {
-      qb.andWhere('a.redirectedAt <= :end', { end: requestData.endDate });
-    }
+    qb.andWhere('a.redirectedAt BETWEEN :start AND :end', {
+      start,
+      end,
+    });
 
     if (requestData.browser) {
       qb.andWhere('a.browser = :browser', { browser: requestData.browser });
