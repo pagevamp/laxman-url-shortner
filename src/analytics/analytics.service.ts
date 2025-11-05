@@ -94,11 +94,21 @@ export class AnalyticsService {
       qb.andWhere('a.os = :os', { os: requestData.os });
     }
 
-    if (requestData.groupByUrl) {
-      qb.select('a.url', 'url')
+    const groupColumns: string[] = [];
+
+    if (requestData.groupByUrl) groupColumns.push('a.url_id'); // map URL to urlId
+    if (requestData.groupByDevice) groupColumns.push('a.device');
+    if (requestData.groupByOs) groupColumns.push('a.os');
+    if (requestData.groupByBrowser) groupColumns.push('a.browser');
+    if (requestData.groupByCountry) groupColumns.push('a.country');
+    if (requestData.groupByIpAddress) groupColumns.push('a.ip_address');
+
+    if (groupColumns.length > 0) {
+      qb.select(groupColumns.join(', '))
         .addSelect('COUNT(*)', 'hits')
-        .groupBy('a.url')
+        .groupBy(groupColumns.join(', '))
         .orderBy('hits', 'DESC');
+
       return qb.getRawMany();
     }
 

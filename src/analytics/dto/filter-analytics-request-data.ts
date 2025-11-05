@@ -12,6 +12,21 @@ export class FilterAnalyticsRequestData {
   groupByUrl?: boolean | null;
 
   @IsOptional()
+  groupByDevice?: boolean | null;
+
+  @IsOptional()
+  groupByIpAddress?: boolean | null;
+
+  @IsOptional()
+  groupByOs?: boolean | null;
+
+  @IsOptional()
+  groupByCountry?: boolean | null;
+
+  @IsOptional()
+  groupByBrowser?: boolean | null;
+
+  @IsOptional()
   urlId?: string | null;
 
   @IsOptional()
