@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { createTransport } from 'nodemailer';
 import Mail from 'nodemailer/lib/mailer';
+import { SendMailRequestdata } from './dto/send-mail-request-data';
 @Injectable()
 export class EmailService {
   private nodemailerTransport: Mail;
@@ -15,9 +16,10 @@ export class EmailService {
       },
     });
   }
-  async sendMail(options: Mail.Options) {
+
+  async sendMail(sendMailRequestdata: SendMailRequestdata) {
     try {
-      await this.nodemailerTransport.sendMail(options);
+      await this.nodemailerTransport.sendMail(sendMailRequestdata);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       throw new InternalServerErrorException(

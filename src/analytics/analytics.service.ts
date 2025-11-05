@@ -6,7 +6,7 @@ import { Repository } from 'typeorm';
 import useragent from 'useragent';
 import { ParsedUserAgent } from './types';
 import { OnEvent } from '@nestjs/event-emitter';
-import { UrlRedirectedEvent } from 'src/event/Url-redirected.events';
+import { UrlRedirectedEvent } from 'src/event/url-redirected.events';
 import { FilterAnalyticsRequestData } from './dto/filter-analytics-request-data';
 @Injectable()
 export class AnalyticsService {

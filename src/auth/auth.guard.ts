@@ -7,6 +7,7 @@ import {
 
 import { AuthService } from './auth.service';
 import { RequestWithUser } from '../types/RequestWithUser';
+import { VerifyTokenRequestData } from './dto/verify-token-request-data';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -22,7 +23,13 @@ export class AuthGuard implements CanActivate {
 
     const token = authHeader.replace(/^Bearer\s+/i, '').trim();
 
-    const decoded = await this.authService.validateToken(token);
+    const verifyTokenRequestData: VerifyTokenRequestData = {
+      token: token,
+    };
+
+    const decoded = await this.authService.validateToken(
+      verifyTokenRequestData,
+    );
     request.decodedData = decoded;
     const userData = request.decodedData;
 

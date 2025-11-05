@@ -17,6 +17,7 @@ import { UrlService } from './url.service';
 import { CreateUrlRequestData } from './dto/create-url-request-data';
 import { AuthGuard } from 'src/auth/auth.guard';
 import type { RequestWithUser } from 'src/types/RequestWithUser';
+import { RedirectUrlRequestData } from './dto/redirect-request-data';
 import { UpdateUrlRequestData } from './dto/update-url-request-data';
 
 @Controller('urls')
@@ -46,10 +47,13 @@ export class UrlController {
   @Get(':shortCode')
   @Redirect()
   async redirect(
-    @Param('shortCode') shortCode: string,
+    @Param() redirectUrlRequestData: RedirectUrlRequestData,
     @Req() req: RequestWithUser,
   ) {
-    const { longCode } = await this.urlService.getLongUrl(shortCode, req);
+    const { longCode } = await this.urlService.getLongUrl(
+      redirectUrlRequestData,
+      req,
+    );
     return { url: longCode, statusCode: 302 };
   }
 
@@ -60,10 +64,10 @@ export class UrlController {
     @Req() request: RequestWithUser,
     @Param('id', ParseUUIDPipe) id: string,
     @Body()
-    body: Partial<UpdateUrlRequestData>,
+    updateUrlRequestData: UpdateUrlRequestData,
   ) {
     const userId = request.decodedData.sub;
-    return await this.urlService.update(userId, id, body);
+    return await this.urlService.update(userId, id, updateUrlRequestData);
   }
 
   @UseGuards(AuthGuard)

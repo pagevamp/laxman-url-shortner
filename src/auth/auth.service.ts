@@ -12,6 +12,11 @@ import { EmailVerification } from './email-verification.entity';
 import { EmailVerificationPayload } from './interface';
 import { EmailMessages } from './messages';
 import { JwtPayload } from 'src/types/JwtPayload';
+import { ResendVerificationRequestData } from './dto/resend-verification-request-data';
+import { VerifyTokenRequestData } from './dto/verify-token-request-data';
+import { SendMailRequestdata } from '../email/dto/send-mail-request-data';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { SendVerificationMailEvent } from 'src/event/send-verification-mail.event';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +28,7 @@ export class AuthService {
     @InjectRepository(EmailVerification)
     private readonly emailVerificationRepo: Repository<EmailVerification>,
     private readonly cryptoService: CryptoService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async signUp(signUpUserDto: SignupRequestData): Promise<User> {
@@ -35,20 +41,12 @@ export class AuthService {
 
     if (existingUser) {
       if (existingUser.username === signUpUserDto.username) {
-        throw new BadRequestException('Username already taken');
+        throw new BadRequestException(EmailMessages.usernameTaken);
       }
 
       if (existingUser.email === signUpUserDto.email) {
-        throw new BadRequestException('Email already taken');
+        throw new BadRequestException(EmailMessages.emailTaken);
       }
-    }
-
-    const userByEmail = await this.userRepository.findOne({
-      where: { email: signUpUserDto.email },
-    });
-
-    if (userByEmail) {
-      throw new BadRequestException('Email already taken');
     }
 
     const hashedPassword = await this.cryptoService.hashPassword(
@@ -66,12 +64,23 @@ export class AuthService {
 
     await this.userRepository.save(user);
 
-    await this.sendVerificationLink(email);
+    const resendVerificationRequestData: ResendVerificationRequestData = {
+      email: email,
+    };
+
+    const event = new SendVerificationMailEvent(
+      resendVerificationRequestData.email,
+    );
+    this.eventEmitter.emit('send.mail', event);
 
     return user;
   }
 
-  async sendVerificationLink(email: string) {
+  @OnEvent('send.mail')
+  async sendVerificationLink(
+    resendVerificationRequestData: ResendVerificationRequestData,
+  ) {
+    const email = resendVerificationRequestData.email;
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
       throw new BadRequestException('User not found');
@@ -88,6 +97,7 @@ export class AuthService {
     const payload: EmailVerificationPayload = {
       email,
     };
+
     const token = this.jwtService.sign(payload, {
       secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
       expiresIn: 3600,
@@ -107,16 +117,21 @@ export class AuthService {
 
     const text = `Welcome to the application. To confirm the email address, click here: ${url}`;
 
-    await this.emailService.sendMail({
+    const sendMailRequestdata: SendMailRequestdata = {
       to: email,
       subject: 'Email confirmation',
       text,
-    });
+    };
+
+    await this.emailService.sendMail(sendMailRequestdata);
+
     return {
       message: EmailMessages.emailSendSuccess,
     };
   }
-  async verify(token: string) {
+  async verify(verifyTokenRequestData: VerifyTokenRequestData) {
+    const token = verifyTokenRequestData.token;
+
     const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
       secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
     });
@@ -153,6 +168,7 @@ export class AuthService {
         email: loginRequestData.email,
       },
     });
+
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -167,19 +183,25 @@ export class AuthService {
       loginRequestData.password,
       user.password,
     );
+
     const payload = { sub: user.id, username: user.username };
 
-    if (match) {
-      return { accessToken: await this.jwtService.signAsync(payload) };
-    } else {
+    if (!match) {
       throw new BadRequestException('Invalid email or password');
     }
+
+    return { accessToken: await this.jwtService.signAsync(payload) };
   }
 
-  async validateToken(token: string): Promise<JwtPayload> {
-    const decoded = await this.jwtService.verifyAsync<JwtPayload>(token, {
-      secret: process.env.JWT_SECRET,
-    });
+  async validateToken(
+    verifyTokenRequestData: VerifyTokenRequestData,
+  ): Promise<JwtPayload> {
+    const decoded = await this.jwtService.verifyAsync<JwtPayload>(
+      verifyTokenRequestData.token,
+      {
+        secret: process.env.JWT_SECRET,
+      },
+    );
     return decoded;
   }
 }

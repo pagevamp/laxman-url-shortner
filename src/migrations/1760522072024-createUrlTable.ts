@@ -9,7 +9,6 @@ export class CreateUrlTable1760522072024 implements MigrationInterface {
             "encrypted_url" varchar (2048) NOT NULL,
             "title" varchar (64) NOT NULL,
             "short_code" varchar (255) NOT NULL UNIQUE,
-            "is_active" boolean DEFAULT true,
             "created_at" timestamp with time zone DEFAULT now(),
             "deleted_at" timestamp with time zone DEFAULT NULL,
             "original_url" VARCHAR(64) NOT NULL,

@@ -16,7 +16,9 @@ import {
 import { GetUrlRequestData } from './dto/get-urls-request-data';
 import { RequestWithUser } from 'src/types/RequestWithUser';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { UrlRedirectedEvent } from 'src/event/Url-redirected.events';
+import { UrlRedirectedEvent } from 'src/event/url-redirected.events';
+import { RedirectUrlRequestData } from './dto/redirect-request-data';
+import { UpdateUrlRequestData } from './dto/update-url-request-data';
 @Injectable()
 export class UrlService {
   constructor(
@@ -55,12 +57,10 @@ export class UrlService {
   }
 
   async getLongUrl(
-    shortCode: string,
+    redirectUrlRequestData: RedirectUrlRequestData,
     req: RequestWithUser,
   ): Promise<{ longCode: string }> {
-    if (!shortCode) {
-      throw new BadRequestException('Short code is required');
-    }
+    const shortCode = redirectUrlRequestData.shortCode;
     const url = await this.urlRepository.findOneByOrFail({
       shortCode,
       expiresAt: MoreThan(new Date()),
@@ -93,7 +93,7 @@ export class UrlService {
   async update(
     userId: string,
     urlId: string,
-    updateData: Partial<Url>,
+    updateUrlRequestData: UpdateUrlRequestData,
   ): Promise<Url> {
     if (!urlId) {
       throw new BadRequestException('URL id is required');
@@ -107,7 +107,7 @@ export class UrlService {
       throw new NotFoundException(`Url with ID ${urlId} not found`);
     }
 
-    await this.urlRepository.update(urlId, updateData);
+    await this.urlRepository.update(urlId, updateUrlRequestData);
 
     return await this.urlRepository.findOneByOrFail({ id: urlId });
   }

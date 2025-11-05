@@ -1,12 +1,17 @@
-import { IsNotEmpty } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsDate, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateUrlRequestData {
-  @IsNotEmpty({ message: 'Expiry date cannot be empty' })
-  expiresAt: Date;
+  @IsNotEmpty()
+  @IsDate()
+  @Type(() => Date)
+  readonly expiresAt?: Date;
 
-  @IsNotEmpty({ message: 'Original url cannot be empty' })
+  @IsNotEmpty({ message: 'Original URL cannot be empty' })
+  @IsString({ message: 'Original URL must be a string' })
   originalUrl: string;
 
   @IsNotEmpty({ message: 'URL title cannot be empty' })
+  @IsString({ message: 'URL Title must be a string' })
   title: string;
 }

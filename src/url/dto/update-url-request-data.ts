@@ -1,9 +1,3 @@
-import { IsNotEmpty } from 'class-validator';
-
-export class UpdateUrlRequestData {
-  @IsNotEmpty()
-  title: string;
-
-  @IsNotEmpty()
-  expiresAt: Date;
-}
+import { CreateUrlRequestData } from './create-url-request-data';
+import { PartialType } from '@nestjs/swagger';
+export class UpdateUrlRequestData extends PartialType(CreateUrlRequestData) {}

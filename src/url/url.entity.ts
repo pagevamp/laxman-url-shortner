@@ -29,9 +29,6 @@ export class Url {
   @Column({ type: 'varchar', length: 255, unique: true, name: 'short_code' })
   readonly shortCode: string;
 
-  @Column({ type: 'boolean', default: true, name: 'is_active' })
-  readonly isActive: boolean;
-
   @Column({ type: 'varchar', length: 64, unique: true, name: 'original_url' })
   readonly originalUrl: string;
 

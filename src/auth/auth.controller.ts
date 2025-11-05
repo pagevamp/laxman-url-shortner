@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -12,6 +11,8 @@ import { AuthService } from './auth.service';
 import { SignupRequestData } from './dto/signup-user-dto';
 
 import { LoginRequestData } from './dto/login-user-dto';
+import { ResendVerificationRequestData } from './dto/resend-verification-request-data';
+import { VerifyTokenRequestData } from './dto/verify-token-request-data';
 
 @Controller('auth')
 export class AuthController {
@@ -30,15 +31,12 @@ export class AuthController {
   }
 
   @Post('resend-verification')
-  async reSendVerification(@Body('email') email: string) {
-    if (!email) throw new BadRequestException('Email is required');
-
-    return await this.authService.sendVerificationLink(email);
+  async reSendVerification(@Body() requestData: ResendVerificationRequestData) {
+    return await this.authService.sendVerificationLink(requestData);
   }
 
   @Get('verify-email')
-  async verifyEmail(@Query('token') token: string) {
-    if (!token) throw new BadRequestException('Token is required');
-    return await this.authService.verify(token);
+  async verifyEmail(@Query() verifyTokenRequestData: VerifyTokenRequestData) {
+    return await this.authService.verify(verifyTokenRequestData);
   }
 }
