@@ -28,7 +28,6 @@ export class CreateUrlTable1760522072024 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      DROP INDEX IF EXISTS "IDX_urls_is_active";
       DROP INDEX IF EXISTS "IDX_urls_expires_at";
       DROP INDEX IF EXISTS "IDX_urls_user_id";
       DROP TABLE "urls";`);
