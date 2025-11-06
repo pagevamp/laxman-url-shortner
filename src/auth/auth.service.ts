@@ -12,6 +12,7 @@ import { EmailVerification } from './email-verification.entity';
 import { EmailVerificationPayload } from './interface';
 import { EmailMessages } from '../config/messages';
 import { ResendEmailVerificationRequestData } from './dto/resend-verification-dto';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
@@ -20,48 +21,48 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
+    private readonly userService: UserService,
     @InjectRepository(EmailVerification)
     private readonly emailVerificationRepo: Repository<EmailVerification>,
     private readonly cryptoService: CryptoService,
   ) {}
 
   async signUp(
-    signUpUserDto: SignupRequestData,
+    signupRequestData: SignupRequestData,
   ): Promise<{ accessToken: string }> {
-    const userByUsername = await this.userRepository.findOne({
-      where: { username: signUpUserDto.username },
-    });
+    const userByUsername = await this.userService.findOneByField(
+      'username',
+      signupRequestData.username,
+    );
 
     if (userByUsername) {
       throw new BadRequestException('Username already taken');
     }
 
-    const userByEmail = await this.userRepository.findOne({
-      where: { email: signUpUserDto.email },
-    });
+    const userByEmail = await this.userService.findOneByField(
+      'email',
+      signupRequestData.email,
+    );
 
     if (userByEmail) {
       throw new BadRequestException('Email already taken');
     }
 
     const hashedPassword = await this.cryptoService.hashPassword(
-      signUpUserDto.password,
+      signupRequestData.password,
     );
 
-    const { email, fullName, username } = signUpUserDto;
+    const { email, fullName, username } = signupRequestData;
 
-    const user = this.userRepository.create({
+    const user = await this.userService.create({
       password: hashedPassword,
       email,
       fullName,
       username,
     });
 
-    await this.userRepository.save(user);
-
     const requestData = { email: email };
     await this.sendVerificationLink(requestData);
-    console.log('Verification email sent to:', email);
 
     const payload = { sub: user.id, username: user.username };
 
@@ -145,12 +146,11 @@ export class AuthService {
 
   async login(
     loginRequestData: LoginRequestData,
-  ): Promise<{ access_token: string }> {
-    const user = await this.userRepository.findOne({
-      where: {
-        email: loginRequestData.email,
-      },
-    });
+  ): Promise<{ accessToken: string }> {
+    const user = await this.userService.findOneByField(
+      'email',
+      loginRequestData.email,
+    );
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -161,9 +161,10 @@ export class AuthService {
     );
     const payload = { sub: user.id, username: user.username };
 
-    if (!match) {
+    if (match) {
+      return { accessToken: await this.jwtService.signAsync(payload) };
+    } else {
       throw new BadRequestException('Invalid email or password');
     }
-    return { access_token: await this.jwtService.signAsync(payload) };
   }
 }
