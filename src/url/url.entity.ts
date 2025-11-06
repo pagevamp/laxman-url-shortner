@@ -11,9 +11,10 @@ import {
 } from 'typeorm';
 import { User } from 'src/user/user.entity';
 
+@Index('IDX_urls_user_id', ['userId'])
+@Index('IDX_urls_expires_at', ['expiresAt'])
 @Entity({ name: 'urls' })
 export class Url {
-  @Index()
   @PrimaryGeneratedColumn('uuid')
   readonly id: string;
 
@@ -55,7 +56,7 @@ export class Url {
     type: 'timestamp with time zone',
     name: 'expires_at',
   })
-  readonly expiresAt?: Date;
+  readonly expiresAt: Date;
 
   @CreateDateColumn({ type: 'timestamp with time zone', name: 'created_at' })
   readonly createdAt: Date;

@@ -24,6 +24,7 @@ export class EmailVerification {
   @JoinColumn({ name: 'user_id' })
   readonly user: User;
 
+  @Index('IDX_email_verifications_token')
   @Column({ length: 255 })
   readonly token: string;
 

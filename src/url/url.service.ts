@@ -31,9 +31,6 @@ export class UrlService {
     userId: string,
     createUrlRequestData: CreateUrlRequestData,
   ): Promise<Url> {
-    if (!createUrlRequestData.originalUrl) {
-      throw new BadRequestException('Missing required fields');
-    }
     const hashUrl = hashString(createUrlRequestData.originalUrl);
 
     const existingUrl = await this.urlRepository.findOne({
@@ -112,7 +109,7 @@ export class UrlService {
     return await this.urlRepository.findOneByOrFail({ id: urlId });
   }
 
-  async delete(userId: string, urlId: string): Promise<void> {
+  async delete(userId: string, urlId: string): Promise<{ message: string }> {
     const existingUrl = await this.urlRepository.findOneBy({
       id: urlId,
       userId: userId,
@@ -122,9 +119,7 @@ export class UrlService {
       throw new NotFoundException(`Url with ID ${urlId} not found`);
     }
 
-    const deletedUrl = await this.urlRepository.softDelete({ id: urlId });
-    if (deletedUrl.affected === 0) {
-      throw new NotFoundException('URL not found');
-    }
+    await this.urlRepository.softDelete({ id: urlId });
+    return { message: 'URL deleted succesfully' };
   }
 }

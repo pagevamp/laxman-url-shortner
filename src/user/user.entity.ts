@@ -7,9 +7,10 @@ import {
   Index,
 } from 'typeorm';
 
+@Index('IDX_users_full_name', ['fullName'])
+@Index('IDX_users_created_at', ['createdAt'])
 @Entity({ name: 'users' })
 export class User {
-  @Index()
   @PrimaryGeneratedColumn('uuid')
   readonly id: string;
 
