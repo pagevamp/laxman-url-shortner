@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { Url } from './url.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThan, Repository } from 'typeorm';
+import { IsNull, LessThan, MoreThan, Repository } from 'typeorm';
 import { CreateUrlRequestData } from './dto/create-url-request-data';
 import {
   CodeGenerator,
@@ -16,7 +16,6 @@ import {
 import { UserService } from '../user/user.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { RequestWithUser } from 'src/types/RequestWithUser';
-import { GetUrlResponseData } from './dto/get-urls-response-data';
 @Injectable()
 export class UrlService {
   constructor(
@@ -30,9 +29,6 @@ export class UrlService {
     userId: string,
     createUrlRequestData: CreateUrlRequestData,
   ): Promise<Url> {
-    if (!createUrlRequestData.originalUrl) {
-      throw new BadRequestException('Missing required fields');
-    }
     const hashUrl = hashString(createUrlRequestData.originalUrl);
 
     const existingUrl = await this.urlRepository.findOne({
@@ -53,6 +49,13 @@ export class UrlService {
       originalUrl: hashUrl,
     });
     return await this.urlRepository.save(url);
+  }
+
+  async checkExpiredUrl(): Promise<Url[]> {
+    const expiredUrl = await this.urlRepository.find({
+      where: { expiresAt: LessThan(new Date()), expiryAlertedAt: IsNull() },
+    });
+    return expiredUrl;
   }
 
   async getLongUrl(
@@ -82,16 +85,21 @@ export class UrlService {
     return { longCode: decryptedUrl };
   }
 
-  async getAll(userId: string): Promise<GetUrlResponseData[]> {
-    const urls: GetUrlResponseData[] = await this.urlRepository.find({
-      where: { userId: userId },
-      select: ['id', 'title', 'shortCode', 'expiresAt'],
-    });
-    const result = urls.map((item) => ({
+  async getAll(
+    userId: string,
+  ): Promise<
+    (Pick<Url, 'id' | 'title' | 'expiresAt'> & { shortCode: string })[]
+  > {
+    const urls: Pick<Url, 'id' | 'title' | 'shortCode' | 'expiresAt'>[] =
+      await this.urlRepository.find({
+        where: { userId },
+        select: ['id', 'title', 'shortCode', 'expiresAt'],
+      });
+
+    return urls.map((item) => ({
       ...item,
       shortCode: `${process.env.REDIRECT_BASE_URL}${item.shortCode}`,
     }));
-    return result;
   }
 
   async update(
@@ -99,14 +107,11 @@ export class UrlService {
     urlId: string,
     updateData: Partial<Url>,
   ): Promise<{ message: string }> {
-    if (!urlId) {
-      throw new BadRequestException('URL id is required');
-    }
-
     const existingUrl = await this.urlRepository.findOneBy({
       id: urlId,
       userId: userId,
     });
+
     if (!existingUrl) {
       throw new NotFoundException(`Url with ID ${urlId} not found`);
     }
@@ -116,9 +121,6 @@ export class UrlService {
   }
 
   async delete(userId: string, urlId: string): Promise<void> {
-    if (!urlId) {
-      throw new BadRequestException('URL id is required');
-    }
     const existingUrl = await this.urlRepository.findOneBy({
       id: urlId,
       userId: userId,
