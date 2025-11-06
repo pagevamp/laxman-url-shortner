@@ -31,9 +31,6 @@ export class UrlService {
     userId: string,
     createUrlRequestData: CreateUrlRequestData,
   ): Promise<Url> {
-    if (!createUrlRequestData.originalUrl) {
-      throw new BadRequestException('Missing required fields');
-    }
     const hashUrl = hashString(createUrlRequestData.originalUrl);
 
     const existingUrl = await this.urlRepository.findOne({
