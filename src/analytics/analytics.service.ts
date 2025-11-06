@@ -67,24 +67,19 @@ export class AnalyticsService {
   async getAnalytics(requestData: FilterAnalyticsRequestData, userId: string) {
     const qb = this.analyticsRepo
       .createQueryBuilder('a')
-      .innerJoin('a.url', 'url');
+      .innerJoin('a.url', 'url')
+      .take(10)
+      .skip(10);
 
     qb.andWhere('url.userId=:userId', { userId });
 
-    if (requestData.startDate && requestData.endDate) {
-      qb.andWhere('a.redirectedAt BETWEEN :start AND :end', {
-        start: requestData.startDate,
-        end: requestData.endDate,
-      });
-    }
+    const start = requestData.startDate || new Date(0);
+    const end = requestData.endDate || new Date();
 
-    if (requestData.startDate) {
-      qb.andWhere('a.redirectedAt >= :start', { start: requestData.startDate });
-    }
-
-    if (requestData.endDate) {
-      qb.andWhere('a.redirectedAt <= :end', { end: requestData.endDate });
-    }
+    qb.andWhere('a.redirectedAt BETWEEN :start AND :end', {
+      start,
+      end,
+    });
 
     if (requestData.browser) {
       qb.andWhere('a.browser = :browser', { browser: requestData.browser });
@@ -101,20 +96,24 @@ export class AnalyticsService {
       qb.andWhere('a.os = :os', { os: requestData.os });
     }
 
-    if (requestData.ipAddress) {
-      qb.andWhere('a.ipAddress = :ipAddress', {
-        ipAddress: requestData.ipAddress,
-      });
-    }
+    const groupColumns: string[] = [];
 
-    if (requestData.groupByUrl) {
-      qb.select('a.url', 'url')
+    if (requestData.groupByUrl) groupColumns.push('a.url_id');
+    if (requestData.groupByDevice) groupColumns.push('a.device');
+    if (requestData.groupByOs) groupColumns.push('a.os');
+    if (requestData.groupByBrowser) groupColumns.push('a.browser');
+    if (requestData.groupByCountry) groupColumns.push('a.country');
+    if (requestData.groupByIpAddress) groupColumns.push('a.ip_address');
+
+    if (groupColumns.length > 0) {
+      qb.select(groupColumns.join(', '))
         .addSelect('COUNT(*)', 'hits')
-        .groupBy('a.url')
+        .groupBy(groupColumns.join(', '))
         .orderBy('hits', 'DESC');
+
       return qb.getRawMany();
     }
 
-    return qb.getMany();
+    return await qb.getMany();
   }
 }

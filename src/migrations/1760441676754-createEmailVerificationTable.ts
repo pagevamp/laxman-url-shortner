@@ -14,10 +14,15 @@ export class CreateEmailVerificationsTable1760600000000
         CONSTRAINT "fk_user_email_verifications" FOREIGN KEY ("user_id") 
           REFERENCES "users"("id") ON DELETE CASCADE
       );
+
+      CREATE INDEX "IDX_email_verifications_token"
+        ON "email_verifications" ("token");
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP TABLE "email_verifications";`);
+    await queryRunner.query(`
+      DROP INDEX IF EXISTS "IDX_email_verifications_token";
+      DROP TABLE "email_verifications";`);
   }
 }

@@ -26,6 +26,21 @@ export class FilterAnalyticsRequestData {
   groupByUrl?: boolean | null;
 
   @IsOptional()
+  groupByDevice?: boolean | null;
+
+  @IsOptional()
+  groupByIpAddress?: boolean | null;
+
+  @IsOptional()
+  groupByOs?: boolean | null;
+
+  @IsOptional()
+  groupByCountry?: boolean | null;
+
+  @IsOptional()
+  groupByBrowser?: boolean | null;
+
+  @IsOptional()
   @IsUUID()
   urlId?: string | null;
 
@@ -44,23 +59,15 @@ export class FilterAnalyticsRequestData {
 
   @IsOptional()
   @IsDateString()
-  @Transform(
-    ({ value }: { value: string }) => {
-      if (!value) return null;
-      return new Date(value).toUTCString();
-    },
-    { toPlainOnly: true },
-  )
+  @Transform(({ value }) => new Date(value).toUTCString(), {
+    toPlainOnly: true,
+  })
   startDate?: Date | null;
 
   @IsOptional()
   @IsDateString()
-  @Transform(
-    ({ value }: { value: string }) => {
-      if (!value) return null;
-      return new Date(value).toUTCString();
-    },
-    { toPlainOnly: true },
-  )
+  @Transform(({ value }) => new Date(value).toUTCString(), {
+    toPlainOnly: true,
+  })
   endDate?: Date | null;
 }
