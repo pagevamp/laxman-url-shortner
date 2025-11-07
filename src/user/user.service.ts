@@ -16,14 +16,39 @@ export class UserService {
   ) {}
 
   async findAll(): Promise<User[]> {
-    return await this.userRepository.find();
+    return await this.userRepository.find({
+      select: [
+        'id',
+        'username',
+        'fullName',
+        'email',
+        'verifiedAt',
+        'createdAt',
+        'lastLoginAt',
+      ],
+    });
+  }
+
+  async findByUserNameAndEmail(username: string, email: string) {
+    return this.userRepository.findOne({
+      where: { email: email, username: username },
+      select: [
+        'id',
+        'username',
+        'fullName',
+        'email',
+        'verifiedAt',
+        'createdAt',
+        'lastLoginAt',
+      ],
+    });
   }
 
   async findOneByField<K extends keyof User>(
     field: K,
     value: User[K],
   ): Promise<User | null> {
-    if (value === undefined || value === null) {
+    if (!value) {
       throw new BadRequestException(`Invalid value for field: ${field}`);
     }
 
@@ -41,7 +66,10 @@ export class UserService {
     return await this.userRepository.save(user);
   }
 
-  async update(userId: string, updateData: Partial<User>): Promise<User> {
+  async update(
+    userId: string,
+    updateData: Partial<User>,
+  ): Promise<{ message: string }> {
     if (!userId) {
       throw new BadRequestException('User ID is required');
     }
@@ -53,6 +81,6 @@ export class UserService {
 
     await this.userRepository.update(userId, updateData);
 
-    return await this.userRepository.findOneByOrFail({ id: userId });
+    return { message: 'User has been updated succesfully' };
   }
 }

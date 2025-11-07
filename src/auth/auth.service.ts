@@ -6,7 +6,6 @@ import { CryptoService } from './crypto.service';
 import { LoginRequestData } from './dto/login-user-dto';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
-import { User } from 'src/user/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EmailVerification } from './email-verification.entity';
 import { EmailVerificationPayload } from './interface';
@@ -17,12 +16,12 @@ import { VerifyTokenRequestData } from './dto/verify-token-request-data';
 import { SendMailRequestData } from '../email/dto/send-mail-request-data';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { SendVerificationMailEvent } from 'src/event/send-verification-mail.event';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     @InjectRepository(EmailVerification)
@@ -31,13 +30,11 @@ export class AuthService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async signUp(signUpUserDto: SignupRequestData): Promise<User> {
-    const existingUser = await this.userRepository.findOne({
-      where: [
-        { username: signUpUserDto.username },
-        { email: signUpUserDto.email },
-      ],
-    });
+  async signUp(signUpUserDto: SignupRequestData): Promise<{ message: string }> {
+    const existingUser = await this.userService.findByUserNameAndEmail(
+      signUpUserDto.username,
+      signUpUserDto.email,
+    );
 
     if (existingUser) {
       if (existingUser.username === signUpUserDto.username) {
@@ -55,14 +52,12 @@ export class AuthService {
 
     const { email, fullName, username } = signUpUserDto;
 
-    const user = this.userRepository.create({
+    await this.userService.create({
       password: hashedPassword,
       email,
       fullName,
       username,
     });
-
-    await this.userRepository.save(user);
 
     const resendVerificationRequestData: ResendVerificationRequestData = {
       email: email,
@@ -73,7 +68,7 @@ export class AuthService {
     );
     this.eventEmitter.emit('send.mail', event);
 
-    return user;
+    return { message: 'Sign up succesfull. Verification mail has been sent.' };
   }
 
   @OnEvent('send.mail')
@@ -81,7 +76,7 @@ export class AuthService {
     resendVerificationRequestData: ResendVerificationRequestData,
   ) {
     const email = resendVerificationRequestData.email;
-    const user = await this.userRepository.findOne({ where: { email } });
+    const user = await this.userService.findOneByField('email', email);
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -90,7 +85,7 @@ export class AuthService {
       throw new BadRequestException('User is already verified');
     }
 
-    await this.emailVerificationRepo.delete({
+    await this.emailVerificationRepo.softDelete({
       userId: user.id,
     });
 
@@ -146,16 +141,12 @@ export class AuthService {
 
     await this.emailVerificationRepo.save(record);
 
-    const user = await this.userRepository.findOne({
-      where: {
-        email: payload.email,
-      },
-    });
+    const user = await this.userService.findOneByField('email', payload.email);
     if (!user) throw new Error('User not found');
 
-    await this.userRepository.update(user.id, { verifiedAt: new Date() });
+    await this.userService.update(user.id, { verifiedAt: new Date() });
 
-    await this.emailVerificationRepo.delete({ token });
+    await this.emailVerificationRepo.softDelete({ token });
 
     return { message: EmailMessages.emailVerifySuccess };
   }
@@ -163,11 +154,10 @@ export class AuthService {
   async login(
     loginRequestData: LoginRequestData,
   ): Promise<{ accessToken: string }> {
-    const user = await this.userRepository.findOne({
-      where: {
-        email: loginRequestData.email,
-      },
-    });
+    const user = await this.userService.findOneByField(
+      'email',
+      loginRequestData.email,
+    );
 
     if (!user) {
       throw new BadRequestException('User not found');

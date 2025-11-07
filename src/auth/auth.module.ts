@@ -8,11 +8,13 @@ import { AuthGuard } from './auth.guard';
 import { EmailVerification } from './email-verification.entity';
 import { User } from 'src/user/user.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, EmailVerification]),
     EmailModule,
+    UserModule,
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,

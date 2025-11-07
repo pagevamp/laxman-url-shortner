@@ -7,6 +7,7 @@ import {
   JoinColumn,
   OneToOne,
   Index,
+  DeleteDateColumn,
 } from 'typeorm';
 
 @Entity('email_verifications')
@@ -27,6 +28,13 @@ export class EmailVerification {
   @Index('IDX_email_verifications_token')
   @Column({ length: 255 })
   readonly token: string;
+
+  @DeleteDateColumn({
+    type: 'timestamp with time zone',
+    nullable: true,
+    name: 'deleted_at',
+  })
+  readonly deletedAt?: Date | null;
 
   @CreateDateColumn({
     type: 'timestamp with time zone',
