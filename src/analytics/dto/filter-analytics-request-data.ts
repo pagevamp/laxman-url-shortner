@@ -1,6 +1,7 @@
 import {
-  IsBoolean,
+  IsArray,
   IsDateString,
+  IsIn,
   IsIP,
   IsISO31661Alpha2,
   IsNotEmpty,
@@ -25,14 +26,9 @@ export class FilterAnalyticsRequestData {
   device?: string | null;
 
   @IsOptional()
-  @IsBoolean()
-  groupByUrl?: boolean | null;
-
-  @IsOptional()
-  groupByDevice?: boolean | null;
-
-  @IsOptional()
-  groupByIpAddress?: boolean | null;
+  @IsArray()
+  @IsIn(['os', 'country', 'url', 'device', 'ipAddress'], { each: true })
+  groupBy: string[];
 
   @IsNotEmpty()
   @IsNumber()
