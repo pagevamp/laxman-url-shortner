@@ -9,14 +9,12 @@ import {
 } from 'typeorm';
 import { Url } from 'src/url/url.entity';
 
-@Index('IDX_url_analytics_url_id', ['urlId'])
-@Index('IDX_url_analytics_redirected_at', ['redirectedAt'])
-@Index('IDX_url_analytics_url_id_redirected_at', ['urlId', 'redirectedAt'])
 @Entity({ name: 'url_analytics' })
 export class UrlAnalytics {
   @PrimaryGeneratedColumn('uuid')
   readonly id: string;
 
+  @Index('IDX_url_analytics_url_id')
   @Column({ type: 'uuid', name: 'url_id' })
   readonly urlId: string;
 
@@ -38,6 +36,7 @@ export class UrlAnalytics {
   @Column({ type: 'varchar', length: 255, nullable: true, name: 'user_agent' })
   readonly userAgent?: string | null;
 
+  @Index('IDX_url_analytics_redirected_at')
   @CreateDateColumn({ type: 'timestamp with time zone', name: 'redirected_at' })
   readonly redirectedAt: Date;
 

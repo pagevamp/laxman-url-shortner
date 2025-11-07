@@ -65,11 +65,12 @@ export class AnalyticsService {
   }
 
   async getAnalytics(requestData: FilterAnalyticsRequestData, userId: string) {
+    const page = requestData.page || 1;
     const qb = this.analyticsRepo
       .createQueryBuilder('a')
       .innerJoin('a.url', 'url')
       .take(10)
-      .skip(10);
+      .skip(page - 10);
 
     qb.andWhere('url.userId=:userId', { userId });
 

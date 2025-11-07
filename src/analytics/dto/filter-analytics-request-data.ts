@@ -3,10 +3,13 @@ import {
   IsDateString,
   IsIP,
   IsISO31661Alpha2,
+  IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
   Length,
+  Min,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -30,6 +33,11 @@ export class FilterAnalyticsRequestData {
 
   @IsOptional()
   groupByIpAddress?: boolean | null;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(0)
+  page?: number;
 
   @IsOptional()
   groupByOs?: boolean | null;

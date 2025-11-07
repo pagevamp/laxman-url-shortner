@@ -17,19 +17,14 @@ export class CreateAnalyticsTable1761545874535 implements MigrationInterface {
           FOREIGN KEY ("url_id") REFERENCES "urls" ("id") ON DELETE CASCADE
       );
 
-
       CREATE INDEX "IDX_url_analytics_url_id" ON "url_analytics" ("url_id");
 
       CREATE INDEX "IDX_url_analytics_redirected_at" ON "url_analytics" ("redirected_at");
-
-      CREATE INDEX "IDX_url_analytics_url_id_redirected_at" 
-        ON "url_analytics" ("url_id", "redirected_at");
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      DROP INDEX IF EXISTS "IDX_url_analytics_url_id_redirected_at";
       DROP INDEX IF EXISTS "IDX_url_analytics_redirected_at";
       DROP INDEX IF EXISTS "IDX_url_analytics_url_id";
       DROP TABLE "url_analytics"`);
