@@ -65,11 +65,12 @@ export class AnalyticsService {
   }
 
   async getAnalytics(requestData: FilterAnalyticsRequestData, userId: string) {
+    const page = requestData.page || 1;
     const qb = this.analyticsRepo
       .createQueryBuilder('a')
       .innerJoin('a.url', 'url')
       .take(10)
-      .skip(10);
+      .skip(page - 10);
 
     qb.andWhere('url.userId=:userId', { userId });
 
@@ -96,14 +97,17 @@ export class AnalyticsService {
       qb.andWhere('a.os = :os', { os: requestData.os });
     }
 
-    const groupColumns: string[] = [];
+    const columnMap: Record<string, string> = {
+      url: 'a.url_id',
+      device: 'a.device',
+      os: 'a.os',
+      browser: 'a.browser',
+      country: 'a.country',
+      ipAddress: 'a.ip_address',
+    };
 
-    if (requestData.groupByUrl) groupColumns.push('a.url_id');
-    if (requestData.groupByDevice) groupColumns.push('a.device');
-    if (requestData.groupByOs) groupColumns.push('a.os');
-    if (requestData.groupByBrowser) groupColumns.push('a.browser');
-    if (requestData.groupByCountry) groupColumns.push('a.country');
-    if (requestData.groupByIpAddress) groupColumns.push('a.ip_address');
+    const groupColumns =
+      requestData.groupBy?.map((key) => columnMap[key]) ?? [];
 
     if (groupColumns.length > 0) {
       qb.select(groupColumns.join(', '))

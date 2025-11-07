@@ -34,7 +34,7 @@ export class UrlService {
     const hashUrl = hashString(createUrlRequestData.originalUrl);
 
     const existingUrl = await this.urlRepository.findOne({
-      where: { originalUrl: hashUrl },
+      where: { originalUrl: hashUrl, userId: userId },
     });
 
     if (existingUrl) {

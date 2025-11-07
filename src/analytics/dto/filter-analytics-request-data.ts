@@ -1,12 +1,16 @@
 import {
-  IsBoolean,
+  IsArray,
   IsDateString,
+  IsIn,
   IsIP,
   IsISO31661Alpha2,
+  IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
   Length,
+  Min,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -22,14 +26,14 @@ export class FilterAnalyticsRequestData {
   device?: string | null;
 
   @IsOptional()
-  @IsBoolean()
-  groupByUrl?: boolean | null;
+  @IsArray()
+  @IsIn(['os', 'country', 'url', 'device', 'ipAddress'], { each: true })
+  groupBy: string[];
 
-  @IsOptional()
-  groupByDevice?: boolean | null;
-
-  @IsOptional()
-  groupByIpAddress?: boolean | null;
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(0)
+  page?: number;
 
   @IsOptional()
   groupByOs?: boolean | null;
