@@ -7,12 +7,12 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsPositive,
   IsString,
   IsUUID,
   Length,
-  Min,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class FilterAnalyticsRequestData {
   @IsOptional()
@@ -27,22 +27,16 @@ export class FilterAnalyticsRequestData {
 
   @IsOptional()
   @IsArray()
-  @IsIn(['os', 'country', 'url', 'device', 'ipAddress'], { each: true })
+  @IsIn(['os', 'country', 'url', 'device', 'ipAddress', 'browser'], {
+    each: true,
+  })
   groupBy: string[];
 
   @IsNotEmpty()
   @IsNumber()
-  @Min(0)
-  page?: number;
-
-  @IsOptional()
-  groupByOs?: boolean | null;
-
-  @IsOptional()
-  groupByCountry?: boolean | null;
-
-  @IsOptional()
-  groupByBrowser?: boolean | null;
+  @Type(() => Number)
+  @IsPositive()
+  page: number;
 
   @IsOptional()
   @IsUUID()
