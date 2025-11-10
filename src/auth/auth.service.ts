@@ -141,7 +141,7 @@ export class AuthService {
       throw new BadRequestException('User not found');
     }
 
-    if (user.verifiedAt === null) {
+    if (!user.verifiedAt) {
       throw new BadRequestException(
         'User not verified. Please verify before login',
       );
