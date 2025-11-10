@@ -11,6 +11,8 @@ import {
 import { AuthService } from './auth.service';
 import { SignupRequestData } from './dto/signup-user-dto';
 
+import { ResendEmailVerificationRequestData } from './dto/resend-verification-dto';
+
 import { LoginRequestData } from './dto/login-user-dto';
 
 @Controller('auth')
@@ -30,10 +32,13 @@ export class AuthController {
   }
 
   @Post('resend-verification')
-  async reSendVerification(@Body('email') email: string) {
-    if (!email) throw new BadRequestException('Email is required');
-
-    return await this.authService.sendVerificationLink(email);
+  async reSendVerification(
+    @Body()
+    resendEmailVerificationRequestData: ResendEmailVerificationRequestData,
+  ) {
+    return await this.authService.sendVerificationLink(
+      resendEmailVerificationRequestData,
+    );
   }
 
   @Get('verify-email')

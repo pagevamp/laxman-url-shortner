@@ -5,13 +5,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { CryptoService } from './crypto.service';
 import { EmailModule } from 'src/email/email.module';
 import { EmailVerification } from './email-verification.entity';
-import { User } from 'src/user/user.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from 'src/user/user.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, EmailVerification]),
+    TypeOrmModule.forFeature([EmailVerification]),
     EmailModule,
     UserModule,
     JwtModule.register({
