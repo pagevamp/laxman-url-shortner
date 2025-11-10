@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { SignupRequestData } from './dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from 'src/email/email.service';
@@ -145,7 +149,9 @@ export class AuthService {
     await this.emailVerificationRepo.save(record);
 
     const user = await this.userService.findOneByField('email', payload.email);
-    if (!user) throw new Error('User not found');
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
     await this.userService.update(user.id, { verifiedAt: new Date() });
 
@@ -163,7 +169,7 @@ export class AuthService {
     );
 
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new NotFoundException('User not found');
     }
 
     if (user.verifiedAt === null) {
