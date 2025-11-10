@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Url } from 'src/url/url.entity';
@@ -22,9 +22,14 @@ export class CheckUrlExpiry {
       where: { expiresAt: LessThan(new Date()), expiryAlertedAt: IsNull() },
     });
     for (const url of expiredUrls) {
-      const user = await this.userRepository.findOneByOrFail({
-        id: url.userId,
+      const user = await this.userRepository.findOne({
+        where: {
+          id: url.userId,
+        },
       });
+      if (!user) {
+        return new NotFoundException('User not found');
+      }
       await this.emailService.sendMail({
         to: user.email,
         subject: `Your ${url.title} URL has expired`,

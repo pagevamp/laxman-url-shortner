@@ -5,7 +5,7 @@ import { EmailService } from 'src/email/email.service';
 import { CryptoService } from './crypto.service';
 import { LoginRequestData } from './dto/login-user-dto';
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EmailVerification } from './email-verification.entity';
 import { EmailVerificationPayload } from './interface';
@@ -131,11 +131,14 @@ export class AuthService {
       secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
     });
 
-    const record = await this.emailVerificationRepo.findOneByOrFail({
-      token,
+    const record = await this.emailVerificationRepo.findOne({
+      where: {
+        token,
+        expiresAt: MoreThan(new Date()),
+      },
     });
 
-    if (record.expiresAt < new Date()) {
+    if (!record) {
       throw new BadRequestException('Token has expired');
     }
 

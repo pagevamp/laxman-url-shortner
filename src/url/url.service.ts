@@ -58,12 +58,14 @@ export class UrlService {
     req: RequestWithUser,
   ): Promise<{ longCode: string }> {
     const shortCode = redirectUrlRequestData.shortCode;
-    const url = await this.urlRepository.findOneByOrFail({
-      shortCode,
-      expiresAt: MoreThan(new Date()),
+    const url = await this.urlRepository.findOne({
+      where: {
+        shortCode,
+        expiresAt: MoreThan(new Date()),
+      },
     });
 
-    if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
+    if (!url) {
       throw new NotFoundException('This URL has expired');
     }
 
@@ -91,7 +93,7 @@ export class UrlService {
     userId: string,
     urlId: string,
     updateUrlRequestData: UpdateUrlRequestData,
-  ): Promise<Url> {
+  ): Promise<{ message: string }> {
     if (!urlId) {
       throw new BadRequestException('URL id is required');
     }
@@ -105,8 +107,7 @@ export class UrlService {
     }
 
     await this.urlRepository.update(urlId, updateUrlRequestData);
-
-    return await this.urlRepository.findOneByOrFail({ id: urlId });
+    return { message: 'URL has been updated' };
   }
 
   async delete(userId: string, urlId: string): Promise<{ message: string }> {
