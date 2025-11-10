@@ -13,7 +13,6 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import type Request from 'express';
 import { UrlService } from './url.service';
 import { CreateUrlRequestData } from './dto/create-url-request-data';
 import { GuardService } from 'src/guard/guard.service';

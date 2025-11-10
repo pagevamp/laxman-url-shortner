@@ -9,7 +9,6 @@ export class CreateUrlTable1760522072024 implements MigrationInterface {
             "encrypted_url" varchar (2048) NOT NULL,
             "title" varchar (64) NOT NULL,
             "short_code" varchar (255) NOT NULL UNIQUE,
-            "is_active" boolean DEFAULT true,
             "created_at" timestamp with time zone DEFAULT now(),
             "deleted_at" timestamp with time zone DEFAULT NULL,
             "original_url" VARCHAR(64) NOT NULL,
@@ -20,10 +19,17 @@ export class CreateUrlTable1760522072024 implements MigrationInterface {
             FOREIGN KEY ("user_id")
             REFERENCES "users" ("id") ON DELETE CASCADE            
         );
+
+      CREATE INDEX "IDX_urls_user_id" ON "urls" ("user_id");
+
+      CREATE INDEX "IDX_urls_expires_at" ON "urls" ("expires_at");
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP TABLE "urls";`);
+    await queryRunner.query(`
+      DROP INDEX IF EXISTS "IDX_urls_expires_at";
+      DROP INDEX IF EXISTS "IDX_urls_user_id";
+      DROP TABLE "urls";`);
   }
 }

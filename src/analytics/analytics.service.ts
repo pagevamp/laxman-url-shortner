@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { Request } from 'express';
 import geoip from 'geoip-lite';
 import { UrlAnalytics } from './analytics.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import useragent from 'useragent';
 import { ParsedUserAgent } from './types';
+import { OnEvent } from '@nestjs/event-emitter';
+import { UrlRedirectedEvent } from 'src/event/Url-redirected.events';
+import { FilterAnalyticsRequestData } from './dto/filter-analytics-request-data';
 @Injectable()
 export class AnalyticsService {
   constructor(
@@ -13,11 +15,13 @@ export class AnalyticsService {
     private readonly analyticsRepo: Repository<UrlAnalytics>,
   ) {}
 
-  async recordClick(urlId: string, req: Request): Promise<void> {
-    const ip =
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-      req.socket?.remoteAddress?.replace('::ffff:', '') ||
-      '0.0.0.0';
+  @OnEvent('url.redirected')
+  async recordClick(event: UrlRedirectedEvent): Promise<void> {
+    const urlId = event.urlId;
+    const req = event.req;
+    const ipAddress = (req.headers['x-forwarded-for'] as string)
+      ?.split(',')[0]
+      ?.trim();
 
     const userAgent = req.headers['user-agent'] || '';
     const parsed = (
@@ -26,19 +30,31 @@ export class AnalyticsService {
       }
     ).parse(userAgent);
 
+    // Match the first section inside parentheses of the User-Agent string (up to the first semicolon).
+    // This typically represents the device or platform, e.g. "Windows NT 10.0" or "iPhone".
     const deviceMatch = parsed.source.match(/\(([^;]+);/);
     const device = deviceMatch ? deviceMatch[1] : 'Unknown Device';
 
+    // Look for known browser names followed by a version number,
+    // e.g. "Chrome/120.0", "Firefox/118.0".
     const browserMatch = parsed.source.match(
       /(Chrome|Firefox|Safari|Edge|Opera)\/[\d.]+/,
     );
     const browser = browserMatch ? browserMatch[0] : 'Unknown Browser';
 
-    const geo = geoip.lookup(ip);
+    // Match the substring inside parentheses that follows the first semicolon.
+    // For example, from "(Windows NT 10.0; Win64; x64)" → captures "Win64; x64".
+    const osMatch = parsed.source.match(/\((?:[^;]+);\s*([^)]+)\)/);
+
+    const os = osMatch ? osMatch[1] : 'Unknown OS';
+
+    const geo = geoip.lookup(ipAddress);
     const country = geo?.country || 'Unknown';
+
     const analytics = this.analyticsRepo.create({
       urlId,
-      ip,
+      os,
+      ipAddress,
       browser: browser,
       userAgent,
       device: device,
@@ -46,5 +62,58 @@ export class AnalyticsService {
     });
 
     await this.analyticsRepo.save(analytics);
+  }
+
+  async getAnalytics(requestData: FilterAnalyticsRequestData, userId: string) {
+    const qb = this.analyticsRepo
+      .createQueryBuilder('a')
+      .innerJoin('a.url', 'url')
+      .take(10)
+      .skip(10);
+
+    qb.andWhere('url.userId=:userId', { userId });
+
+    const start = requestData.startDate || new Date(0);
+    const end = requestData.endDate || new Date();
+
+    qb.andWhere('a.redirectedAt BETWEEN :start AND :end', {
+      start,
+      end,
+    });
+
+    if (requestData.browser) {
+      qb.andWhere('a.browser = :browser', { browser: requestData.browser });
+    }
+    if (requestData.country) {
+      qb.andWhere('a.country = :country', { country: requestData.country });
+    }
+
+    if (requestData.device) {
+      qb.andWhere('a.device = :device', { device: requestData.device });
+    }
+
+    if (requestData.os) {
+      qb.andWhere('a.os = :os', { os: requestData.os });
+    }
+
+    const groupColumns: string[] = [];
+
+    if (requestData.groupByUrl) groupColumns.push('a.url_id');
+    if (requestData.groupByDevice) groupColumns.push('a.device');
+    if (requestData.groupByOs) groupColumns.push('a.os');
+    if (requestData.groupByBrowser) groupColumns.push('a.browser');
+    if (requestData.groupByCountry) groupColumns.push('a.country');
+    if (requestData.groupByIpAddress) groupColumns.push('a.ip_address');
+
+    if (groupColumns.length > 0) {
+      qb.select(groupColumns.join(', '))
+        .addSelect('COUNT(*)', 'hits')
+        .groupBy(groupColumns.join(', '))
+        .orderBy('hits', 'DESC');
+
+      return qb.getRawMany();
+    }
+
+    return await qb.getMany();
   }
 }

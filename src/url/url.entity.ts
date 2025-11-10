@@ -6,9 +6,13 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  DeleteDateColumn,
+  Index,
 } from 'typeorm';
 import { User } from 'src/user/user.entity';
 
+@Index('IDX_urls_user_id', ['userId'])
+@Index('IDX_urls_expires_at', ['expiresAt'])
 @Entity({ name: 'urls' })
 export class Url {
   @PrimaryGeneratedColumn('uuid')
@@ -26,9 +30,6 @@ export class Url {
   @Column({ type: 'varchar', length: 255, unique: true, name: 'short_code' })
   readonly shortCode: string;
 
-  @Column({ type: 'boolean', default: true, name: 'is_active' })
-  readonly isActive: boolean;
-
   @Column({ type: 'varchar', length: 64, unique: true, name: 'original_url' })
   readonly originalUrl: string;
 
@@ -40,7 +41,7 @@ export class Url {
   })
   readonly expiryAlertedAt: Date | null;
 
-  @Column({
+  @DeleteDateColumn({
     type: 'timestamp with time zone',
     nullable: true,
     name: 'deleted_at',

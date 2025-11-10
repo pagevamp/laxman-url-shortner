@@ -13,26 +13,22 @@ import {
   encrypt,
   hashString,
 } from './utils/crypto-helper';
-import { UserService } from '../user/user.service';
-import { AnalyticsService } from '../analytics/analytics.service';
 import { RequestWithUser } from 'src/types/RequestWithUser';
 import { GetUrlResponseData } from './dto/get-urls-response-data';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UrlRedirectedEvent } from 'src/event/Url-redirected.events';
 @Injectable()
 export class UrlService {
   constructor(
     @InjectRepository(Url)
     private readonly urlRepository: Repository<Url>,
-    private readonly userService: UserService,
-    private readonly analyticsService: AnalyticsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(
     userId: string,
     createUrlRequestData: CreateUrlRequestData,
   ): Promise<Url> {
-    if (!createUrlRequestData.originalUrl) {
-      throw new BadRequestException('Missing required fields');
-    }
     const hashUrl = hashString(createUrlRequestData.originalUrl);
 
     const existingUrl = await this.urlRepository.findOne({
@@ -78,7 +74,10 @@ export class UrlService {
     }
 
     const decryptedUrl = decrypt(url.encryptedUrl);
-    await this.analyticsService.recordClick(url.id, req);
+
+    const event = new UrlRedirectedEvent(url.id, req);
+    this.eventEmitter.emit('url.redirected', event);
+
     return { longCode: decryptedUrl };
   }
 
@@ -115,10 +114,7 @@ export class UrlService {
     return { message: 'URL updated succesfully' };
   }
 
-  async delete(userId: string, urlId: string): Promise<void> {
-    if (!urlId) {
-      throw new BadRequestException('URL id is required');
-    }
+  async delete(userId: string, urlId: string): Promise<{ message: string }> {
     const existingUrl = await this.urlRepository.findOneBy({
       id: urlId,
       userId: userId,
@@ -128,6 +124,7 @@ export class UrlService {
       throw new NotFoundException(`Url with ID ${urlId} not found`);
     }
 
-    await this.urlRepository.delete({ id: urlId });
+    await this.urlRepository.softDelete({ id: urlId });
+    return { message: 'URL deleted succesfully' };
   }
 }
