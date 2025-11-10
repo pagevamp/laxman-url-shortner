@@ -5,7 +5,7 @@ export class CreateUrlRequestData {
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
-  readonly expiresAt?: Date;
+  readonly expiresAt: Date;
 
   @IsNotEmpty({ message: 'Original URL cannot be empty' })
   @IsString({ message: 'Original URL must be a string' })
