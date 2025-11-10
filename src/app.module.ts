@@ -11,10 +11,12 @@ import { CronModule } from './cron/cron.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { GuardService } from './guard/guard.service';
 import { GuardModule } from './guard/guard.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     TypeOrmModule.forRoot(dataSource.options),
     UserModule,
     AuthModule,
