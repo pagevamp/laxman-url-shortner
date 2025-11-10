@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -58,11 +59,11 @@ export class AuthService {
     const email = resendEmailVerificationRequestData.email;
     const user = await this.userService.findOneByField('email', email);
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new NotFoundException('User not found');
     }
 
     if (user.verifiedAt) {
-      throw new BadRequestException('User is already verified');
+      throw new ConflictException('User is already verified');
     }
 
     await this.emailVerificationRepo.delete({
@@ -117,7 +118,10 @@ export class AuthService {
     await this.emailVerificationRepo.save(record);
 
     const user = await this.userService.findOneByField('email', payload.email);
-    if (!user) throw new Error('User not found');
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
     await this.userService.update(user.id, { verifiedAt: new Date() });
 
