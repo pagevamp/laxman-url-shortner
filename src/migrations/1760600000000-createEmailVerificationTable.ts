@@ -11,7 +11,7 @@ export class CreateEmailVerificationsTable1760600000000
         "token" varchar(255) NOT NULL,
         "created_at" timestamp with time zone DEFAULT now(),
         "expires_at" timestamp with time zone NOT NULL,
-        "deleted_at" timestamp with time zone DEFAULT NULL
+        "deleted_at" timestamp with time zone DEFAULT NULL,
         CONSTRAINT "fk_user_email_verifications" FOREIGN KEY ("user_id") 
           REFERENCES "users"("id") ON DELETE CASCADE
       );
