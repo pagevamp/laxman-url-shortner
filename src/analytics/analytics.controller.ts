@@ -10,14 +10,14 @@ import {
 } from '@nestjs/common';
 import { FilterAnalyticsRequestData } from './dto/filter-analytics-request-data';
 import { AnalyticsService } from './analytics.service';
-import { AuthGuard } from 'src/auth/auth.guard';
 import type { RequestWithUser } from 'src/types/RequestWithUser';
+import { GuardService } from 'src/guard/guard.service';
 
 @Controller('analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
-  @UseGuards(AuthGuard)
+  @UseGuards(GuardService)
   @HttpCode(HttpStatus.OK)
   @Get()
   async filterUrlAnalytics(

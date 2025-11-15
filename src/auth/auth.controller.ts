@@ -10,8 +10,9 @@ import {
 import { AuthService } from './auth.service';
 import { SignupRequestData } from './dto/signup-user-dto';
 
+import { ResendEmailVerificationRequestData } from './dto/resend-verification-dto';
+
 import { LoginRequestData } from './dto/login-user-dto';
-import { ResendVerificationRequestData } from './dto/resend-verification-request-data';
 import { VerifyTokenRequestData } from './dto/verify-token-request-data';
 
 @Controller('auth')
@@ -31,8 +32,13 @@ export class AuthController {
   }
 
   @Post('resend-verification')
-  async reSendVerification(@Body() requestData: ResendVerificationRequestData) {
-    return await this.authService.sendVerificationLink(requestData);
+  async reSendVerification(
+    @Body()
+    resendEmailVerificationRequestData: ResendEmailVerificationRequestData,
+  ) {
+    return await this.authService.sendVerificationLink(
+      resendEmailVerificationRequestData,
+    );
   }
 
   @Get('verify-email')

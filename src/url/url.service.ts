@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { Url } from './url.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThan, Repository } from 'typeorm';
+import { IsNull, LessThan, MoreThan, Repository } from 'typeorm';
 import { CreateUrlRequestData } from './dto/create-url-request-data';
 import {
   CodeGenerator,
@@ -13,12 +13,12 @@ import {
   encrypt,
   hashString,
 } from './utils/crypto-helper';
-import { GetUrlRequestData } from './dto/get-urls-request-data';
 import { RequestWithUser } from 'src/types/RequestWithUser';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UrlRedirectedEvent } from 'src/event/url-redirected.events';
 import { RedirectUrlRequestData } from './dto/redirect-request-data';
 import { UpdateUrlRequestData } from './dto/update-url-request-data';
+
 @Injectable()
 export class UrlService {
   constructor(
@@ -34,30 +34,44 @@ export class UrlService {
     const hashUrl = hashString(createUrlRequestData.originalUrl);
 
     const existingUrl = await this.urlRepository.findOne({
-      where: { originalUrl: hashUrl, userId: userId },
+      where: { originalUrl: hashUrl, userId },
     });
 
     if (existingUrl) {
-      throw new BadRequestException('short url for this URL already exists');
+      throw new BadRequestException('Short URL for this URL already exists');
     }
+
     const shortCode = CodeGenerator();
     const encryptedUrl = encrypt(createUrlRequestData.originalUrl);
+
     const url = this.urlRepository.create({
       title: createUrlRequestData.title,
-      userId: userId,
-      shortCode: shortCode,
-      encryptedUrl: encryptedUrl,
+      userId,
+      shortCode,
+      encryptedUrl,
       expiresAt: createUrlRequestData.expiresAt,
       originalUrl: hashUrl,
     });
+
     return await this.urlRepository.save(url);
+  }
+
+  async checkExpiredUrl(): Promise<Url[]> {
+    return await this.urlRepository.find({
+      where: { expiresAt: LessThan(new Date()), expiryAlertedAt: IsNull() },
+    });
   }
 
   async getLongUrl(
     redirectUrlRequestData: RedirectUrlRequestData,
     req: RequestWithUser,
   ): Promise<{ longCode: string }> {
-    const shortCode = redirectUrlRequestData.shortCode;
+    const { shortCode } = redirectUrlRequestData;
+
+    if (!shortCode) {
+      throw new BadRequestException('Short code is required');
+    }
+
     const url = await this.urlRepository.findOne({
       where: {
         shortCode,
@@ -66,7 +80,7 @@ export class UrlService {
     });
 
     if (!url) {
-      throw new NotFoundException('This URL has expired');
+      throw new NotFoundException('This URL has expired or does not exist');
     }
 
     const decryptedUrl = decrypt(url.encryptedUrl);
@@ -77,16 +91,20 @@ export class UrlService {
     return { longCode: decryptedUrl };
   }
 
-  async getAll(userId: string): Promise<GetUrlRequestData[]> {
-    const urls = (await this.urlRepository.find({
-      where: { userId: userId },
-      select: ['title', 'shortCode', 'expiresAt'],
-    })) as GetUrlRequestData[];
-    const result = urls.map((item) => ({
+  async getAll(
+    userId: string,
+  ): Promise<
+    (Pick<Url, 'id' | 'title' | 'expiresAt'> & { shortCode: string })[]
+  > {
+    const urls = await this.urlRepository.find({
+      where: { userId },
+      select: ['id', 'title', 'shortCode', 'expiresAt'],
+    });
+
+    return urls.map((item) => ({
       ...item,
       shortCode: `${process.env.REDIRECT_BASE_URL}${item.shortCode}`,
     }));
-    return result;
   }
 
   async update(
@@ -100,27 +118,28 @@ export class UrlService {
 
     const existingUrl = await this.urlRepository.findOneBy({
       id: urlId,
-      userId: userId,
+      userId,
     });
+
     if (!existingUrl) {
-      throw new NotFoundException(`Url with ID ${urlId} not found`);
+      throw new NotFoundException(`URL with ID ${urlId} not found`);
     }
 
     await this.urlRepository.update(urlId, updateUrlRequestData);
-    return { message: 'URL has been updated' };
+    return { message: 'URL has been updated successfully' };
   }
 
   async delete(userId: string, urlId: string): Promise<{ message: string }> {
     const existingUrl = await this.urlRepository.findOneBy({
       id: urlId,
-      userId: userId,
+      userId,
     });
 
     if (!existingUrl) {
-      throw new NotFoundException(`Url with ID ${urlId} not found`);
+      throw new NotFoundException(`URL with ID ${urlId} not found`);
     }
 
     await this.urlRepository.softDelete({ id: urlId });
-    return { message: 'URL deleted succesfully' };
+    return { message: 'URL deleted successfully' };
   }
 }

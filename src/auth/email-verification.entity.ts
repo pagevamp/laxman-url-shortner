@@ -15,7 +15,7 @@ export class EmailVerification {
   @PrimaryGeneratedColumn('uuid')
   readonly id: string;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'uuid' })
   readonly userId: string;
 
   @OneToOne(() => User, (user) => user.id, {

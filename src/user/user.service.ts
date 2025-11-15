@@ -7,12 +7,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './user.entity';
 import { Repository } from 'typeorm';
 import { SignupRequestData } from 'src/auth/dto/signup-user-dto';
+import { JwtService } from '@nestjs/jwt';
+import { JwtPayload } from './types/JwtPayload';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly jwtService: JwtService,
   ) {}
 
   async findAll(): Promise<User[]> {
@@ -29,9 +32,12 @@ export class UserService {
     });
   }
 
-  async findByUserNameAndEmail(username: string, email: string) {
+  async findByUserNameAndEmail(
+    username: string,
+    email: string,
+  ): Promise<User | null> {
     return this.userRepository.findOne({
-      where: { email: email, username: username },
+      where: { username, email },
       select: [
         'id',
         'username',
@@ -47,22 +53,41 @@ export class UserService {
   async findOneByField<K extends keyof User>(
     field: K,
     value: User[K],
-  ): Promise<User | null> {
+  ): Promise<User> {
     if (!value) {
       throw new BadRequestException(`Invalid value for field: ${field}`);
     }
 
-    const user = await this.userRepository.findOneBy({ [field]: value });
+    const user = await this.userRepository.findOne({
+      where: { [field]: value },
+    });
 
-    return user || null;
-  }
-
-  async create(userDto: SignupRequestData): Promise<User> {
-    if (!userDto.email || !userDto.username || !userDto.password) {
-      throw new BadRequestException('Missing required fields');
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
-    const user = this.userRepository.create(userDto);
+    return user;
+  }
+
+  async create(signUpUserDto: SignupRequestData): Promise<User> {
+    const existingUser = await this.userRepository.findOne({
+      where: [
+        { username: signUpUserDto.username },
+        { email: signUpUserDto.email },
+      ],
+    });
+
+    if (existingUser) {
+      if (existingUser.username === signUpUserDto.username) {
+        throw new BadRequestException('Username already taken');
+      }
+
+      if (existingUser.email === signUpUserDto.email) {
+        throw new BadRequestException('Email already taken');
+      }
+    }
+
+    const user = this.userRepository.create(signUpUserDto);
     return await this.userRepository.save(user);
   }
 
@@ -80,7 +105,12 @@ export class UserService {
     }
 
     await this.userRepository.update(userId, updateData);
+    return { message: 'User has been updated successfully' };
+  }
 
-    return { message: 'User has been updated succesfully' };
+  validateToken(token: string): JwtPayload {
+    return this.jwtService.verify<JwtPayload>(token, {
+      secret: process.env.JWT_SECRET,
+    });
   }
 }

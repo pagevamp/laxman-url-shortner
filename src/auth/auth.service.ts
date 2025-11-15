@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -9,84 +10,62 @@ import { EmailService } from 'src/email/email.service';
 import { CryptoService } from './crypto.service';
 import { LoginRequestData } from './dto/login-user-dto';
 import * as bcrypt from 'bcrypt';
-import { MoreThan, Repository } from 'typeorm';
+import { LessThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EmailVerification } from './email-verification.entity';
 import { EmailVerificationPayload } from './interface';
-import { EmailMessages } from './messages';
 import { JwtPayload } from 'src/types/JwtPayload';
-import { ResendVerificationRequestData } from './dto/resend-verification-request-data';
-import { VerifyTokenRequestData } from './dto/verify-token-request-data';
+import { EmailMessages } from '../config/messages';
+import { ResendEmailVerificationRequestData } from './dto/resend-verification-dto';
 import { SendMailRequestData } from '../email/dto/send-mail-request-data';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import { SendVerificationMailEvent } from 'src/event/send-verification-mail.event';
 import { UserService } from '../user/user.service';
+import { VerifyTokenRequestData } from './dto/verify-token-request-data';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
+    private readonly userService: UserService,
     @InjectRepository(EmailVerification)
     private readonly emailVerificationRepo: Repository<EmailVerification>,
     private readonly cryptoService: CryptoService,
-    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async signUp(signUpUserDto: SignupRequestData): Promise<{ message: string }> {
-    const existingUser = await this.userService.findByUserNameAndEmail(
-      signUpUserDto.username,
-      signUpUserDto.email,
-    );
-
-    if (existingUser) {
-      if (existingUser.username === signUpUserDto.username) {
-        throw new BadRequestException(EmailMessages.usernameTaken);
-      }
-
-      if (existingUser.email === signUpUserDto.email) {
-        throw new BadRequestException(EmailMessages.emailTaken);
-      }
-    }
-
     const hashedPassword = await this.cryptoService.hashPassword(
       signUpUserDto.password,
     );
 
-    const { email, fullName, username } = signUpUserDto;
-
-    await this.userService.create({
+    const createUserRequestData: SignupRequestData = {
+      ...signUpUserDto,
       password: hashedPassword,
-      email,
-      fullName,
-      username,
-    });
-
-    const resendVerificationRequestData: ResendVerificationRequestData = {
-      email: email,
     };
 
-    const event = new SendVerificationMailEvent(
-      resendVerificationRequestData.email,
-    );
-    this.eventEmitter.emit('send.mail', event);
+    const user = await this.userService.create(createUserRequestData);
 
-    return { message: 'Sign up succesfull. Verification mail has been sent.' };
+    const requestData: ResendEmailVerificationRequestData = {
+      email: user.email,
+    };
+    await this.sendVerificationLink(requestData);
+
+    return {
+      message:
+        'Sign Up successful. Verification mail has been sent. Please verify',
+    };
   }
 
-  @OnEvent('send.mail')
   async sendVerificationLink(
-    resendVerificationRequestData: ResendVerificationRequestData,
+    resendEmailVerificationRequestData: ResendEmailVerificationRequestData,
   ) {
-    const email = resendVerificationRequestData.email;
+    const email = resendEmailVerificationRequestData.email;
     const user = await this.userService.findOneByField('email', email);
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new NotFoundException('User not found');
     }
 
-    if (user.verifiedAt !== null) {
-      throw new BadRequestException('User is already verified');
+    if (user.verifiedAt) {
+      throw new ConflictException('User is already verified');
     }
 
     await this.emailVerificationRepo.softDelete({
@@ -128,22 +107,19 @@ export class AuthService {
       message: EmailMessages.emailSendSuccess,
     };
   }
+
   async verify(verifyTokenRequestData: VerifyTokenRequestData) {
     const token = verifyTokenRequestData.token;
-
     const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
       secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
     });
 
     const record = await this.emailVerificationRepo.findOne({
-      where: {
-        token,
-        expiresAt: MoreThan(new Date()),
-      },
+      where: { token, expiresAt: LessThan(new Date()) },
     });
 
     if (!record) {
-      throw new BadRequestException('Token has expired');
+      throw new NotFoundException('Token not found or has expired');
     }
 
     await this.emailVerificationRepo.save(record);
@@ -172,7 +148,7 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    if (user.verifiedAt === null) {
+    if (!user.verifiedAt) {
       throw new BadRequestException(
         'User not verified. Please verify before login',
       );
@@ -192,9 +168,9 @@ export class AuthService {
     return { accessToken: await this.jwtService.signAsync(payload) };
   }
 
-  async validateToken(
-    verifyTokenRequestData: VerifyTokenRequestData,
-  ): Promise<JwtPayload> {
+  async validateToken(verifyTokenRequestData: {
+    token: string;
+  }): Promise<JwtPayload> {
     const decoded = await this.jwtService.verifyAsync<JwtPayload>(
       verifyTokenRequestData.token,
       {
