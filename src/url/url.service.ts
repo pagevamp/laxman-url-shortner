@@ -116,20 +116,25 @@ export class UrlService {
       throw new BadRequestException('URL id is required');
     }
 
-    const existingUrl = await this.urlRepository.findOneBy({
-      id: urlId,
-      userId,
+    const existingUrl = await this.urlRepository.findOne({
+      where: {
+        id: urlId,
+        userId,
+        expiresAt: MoreThan(new Date()),
+      },
     });
 
     if (!existingUrl) {
-      throw new NotFoundException(`URL with ID ${urlId} not found`);
+      throw new NotFoundException(
+        `URL with ID ${urlId} not found or the URL is already expired`,
+      );
     }
 
     await this.urlRepository.update(urlId, updateUrlRequestData);
     return { message: 'URL has been updated successfully' };
   }
 
-  async delete(userId: string, urlId: string): Promise<{ message: string }> {
+  async delete(userId: string, urlId: string): Promise<void> {
     const existingUrl = await this.urlRepository.findOneBy({
       id: urlId,
       userId,
@@ -140,6 +145,5 @@ export class UrlService {
     }
 
     await this.urlRepository.softDelete({ id: urlId });
-    return { message: 'URL deleted successfully' };
   }
 }

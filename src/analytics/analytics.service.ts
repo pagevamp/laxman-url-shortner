@@ -66,48 +66,47 @@ export class AnalyticsService {
 
   async getAnalytics(requestData: FilterAnalyticsRequestData, userId: string) {
     const page = requestData.page - 1;
+    const take = 10;
+
     const qb = this.analyticsRepo
       .createQueryBuilder('a')
       .innerJoin('a.url', 'url')
-      .take(10)
-      .skip(page * 10);
-
-    qb.andWhere('url.userId=:userId', { userId });
+      .where('url.userId = :userId', { userId })
+      .take(take)
+      .skip(page * take);
 
     const start = requestData.startDate || new Date(0);
     const end = requestData.endDate || new Date();
 
-    qb.andWhere('a.redirectedAt BETWEEN :start AND :end', {
-      start,
-      end,
+    qb.andWhere('a.redirectedAt BETWEEN :start AND :end', { start, end });
+
+    const filters = {
+      browser: requestData.browser,
+      country: requestData.country,
+      device: requestData.device,
+      os: requestData.os,
+      ip_address: requestData.ipAddress,
+      url_id: requestData.urlId,
+    } as const;
+
+    (
+      Object.entries(filters) as [
+        keyof typeof filters,
+        string | undefined | null,
+      ][]
+    ).forEach(([key, value]) => {
+      if (value) {
+        qb.andWhere(`a.${key} = :${key}`, { [key]: value });
+      }
     });
 
-    if (requestData.browser) {
-      qb.andWhere('a.browser = :browser', { browser: requestData.browser });
-    }
-    if (requestData.country) {
-      qb.andWhere('a.country = :country', { country: requestData.country });
-    }
+    if (requestData.groupBy && requestData.groupBy.length > 0) {
+      const groupColumns = requestData.groupBy.map((g) => {
+        if (g === 'ipAddress') return 'a.ip_address';
+        if (g === 'url') return 'a.url_id';
+        return `a.${g}`;
+      });
 
-    if (requestData.device) {
-      qb.andWhere('a.device = :device', { device: requestData.device });
-    }
-
-    if (requestData.os) {
-      qb.andWhere('a.os = :os', { os: requestData.os });
-    }
-
-    const groupColumns: string[] = [];
-
-    if (requestData.groupBy.includes('device')) groupColumns.push('a.device');
-    if (requestData.groupBy.includes('url')) groupColumns.push('a.url_id');
-    if (requestData.groupBy.includes('os')) groupColumns.push('a.os');
-    if (requestData.groupBy.includes('browser')) groupColumns.push('a.browser');
-    if (requestData.groupBy.includes('country')) groupColumns.push('a.country');
-    if (requestData.groupBy.includes('ipAddress'))
-      groupColumns.push('a.ip_address');
-
-    if (groupColumns.length > 0) {
       qb.select(groupColumns.join(', '))
         .addSelect('COUNT(*)', 'hits')
         .groupBy(groupColumns.join(', '))
@@ -115,6 +114,7 @@ export class AnalyticsService {
 
       return qb.getRawMany();
     }
-    return await qb.getMany();
+
+    return qb.getMany();
   }
 }

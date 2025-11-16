@@ -1,10 +1,11 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsNotEmpty, IsString, IsUrl } from 'class-validator';
+import { IsDate, IsNotEmpty, IsString, IsUrl, MinDate } from 'class-validator';
 
 export class CreateUrlRequestData {
-  @IsNotEmpty()
-  @IsDate()
+  @IsNotEmpty({ message: 'Expiration date is required' })
+  @IsDate({ message: 'Expiration date must be a valid date' })
   @Type(() => Date)
+  @MinDate(new Date(), { message: 'Expiration date must be in the future' })
   readonly expiresAt: Date;
 
   @IsNotEmpty({ message: 'Original URL cannot be empty' })

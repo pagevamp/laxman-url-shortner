@@ -4,6 +4,6 @@ import { Controller, Get } from '@nestjs/common';
 export class AppController {
   @Get()
   getHello(): string {
-    return `Development api is running`;
+    return `${process.env.NODE_ENV} api is running`;
   }
 }

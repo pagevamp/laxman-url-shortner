@@ -79,6 +79,5 @@ export class UrlController {
   ) {
     const userId = request.decodedData.sub;
     await this.urlService.delete(userId, id);
-    return { message: 'URL deleted successfully' };
   }
 }

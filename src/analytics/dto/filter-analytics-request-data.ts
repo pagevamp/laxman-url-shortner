@@ -30,6 +30,11 @@ export class FilterAnalyticsRequestData {
   @IsIn(['os', 'country', 'url', 'device', 'ipAddress', 'browser'], {
     each: true,
   })
+  @Transform(({ value }) => {
+    if (!value) return [];
+    if (typeof value === 'string') return value.split(',').map((v) => v.trim());
+    return value;
+  })
   groupBy: string[];
 
   @IsNotEmpty()

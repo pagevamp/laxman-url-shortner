@@ -7,7 +7,7 @@ export class CreateEmailVerificationsTable1760600000000
     await queryRunner.query(`
       CREATE TABLE "email_verifications" (
         "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-        "user_id" uuid NOT NULL UNIQUE,
+        "user_id" uuid NOT NULL,
         "token" varchar(255) NOT NULL,
         "created_at" timestamp with time zone DEFAULT now(),
         "expires_at" timestamp with time zone NOT NULL,
@@ -18,11 +18,16 @@ export class CreateEmailVerificationsTable1760600000000
 
       CREATE INDEX "IDX_email_verifications_token"
         ON "email_verifications" ("token");
+
+      CREATE UNIQUE INDEX "UQ_user_email_verifications_active"
+        ON "email_verifications" ("user_id")
+        WHERE "deleted_at" IS NULL;
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
+      DROP INDEX IF EXISTS "UQ_user_email_verifications_active";
       DROP INDEX IF EXISTS "IDX_email_verifications_token";
       DROP TABLE "email_verifications";`);
   }

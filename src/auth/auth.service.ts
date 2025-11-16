@@ -10,7 +10,7 @@ import { EmailService } from 'src/email/email.service';
 import { CryptoService } from './crypto.service';
 import { LoginRequestData } from './dto/login-user-dto';
 import * as bcrypt from 'bcrypt';
-import { LessThan, Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EmailVerification } from './email-verification.entity';
 import { EmailVerificationPayload } from './interface';
@@ -110,19 +110,18 @@ export class AuthService {
 
   async verify(verifyTokenRequestData: VerifyTokenRequestData) {
     const token = verifyTokenRequestData.token;
+
     const payload = this.jwtService.verify<EmailVerificationPayload>(token, {
       secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
     });
 
     const record = await this.emailVerificationRepo.findOne({
-      where: { token, expiresAt: LessThan(new Date()) },
+      where: { token, expiresAt: MoreThan(new Date()) },
     });
 
     if (!record) {
       throw new NotFoundException('Token not found or has expired');
     }
-
-    await this.emailVerificationRepo.save(record);
 
     const user = await this.userService.findOneByField('email', payload.email);
     if (!user) {
@@ -144,13 +143,11 @@ export class AuthService {
       loginRequestData.email,
     );
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    if (!user.verifiedAt) {
+    if (!user || !user.verifiedAt) {
       throw new BadRequestException(
-        'User not verified. Please verify before login',
+        !user
+          ? 'User not found'
+          : 'User not verified. Please verify before login',
       );
     }
 
@@ -164,6 +161,8 @@ export class AuthService {
     if (!match) {
       throw new BadRequestException('Invalid email or password');
     }
+
+    await this.userService.update(user.id, { lastLoginAt: new Date() });
 
     return { accessToken: await this.jwtService.signAsync(payload) };
   }

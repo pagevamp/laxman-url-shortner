@@ -18,7 +18,7 @@ export class CheckUrlExpiry {
     for (const url of expiredUrls) {
       const user = await this.userService.findOneByField('id', url.userId);
       if (!user) {
-        continue; // skip if user not found
+        continue;
       }
 
       await this.emailService.sendMail({

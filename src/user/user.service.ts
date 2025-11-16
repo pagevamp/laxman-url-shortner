@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -9,6 +10,7 @@ import { Repository } from 'typeorm';
 import { SignupRequestData } from 'src/auth/dto/signup-user-dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './types/JwtPayload';
+import { UpdateUserRequestData } from './dto/update-user-request-data';
 
 @Injectable()
 export class UserService {
@@ -93,18 +95,28 @@ export class UserService {
 
   async update(
     userId: string,
-    updateData: Partial<User>,
+    updateData: UpdateUserRequestData,
   ): Promise<{ message: string }> {
     if (!userId) {
       throw new BadRequestException('User ID is required');
     }
 
-    const existingUser = await this.userRepository.findOneBy({ id: userId });
-    if (!existingUser) {
+    const user = await this.userRepository.findOneBy({ id: userId });
+    if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
+    if (updateData.username && updateData.username !== user.username) {
+      const existingUsername = await this.userRepository.findOneBy({
+        username: updateData.username,
+      });
+      if (existingUsername) {
+        throw new ConflictException('Username is already taken');
+      }
+    }
+
     await this.userRepository.update(userId, updateData);
+
     return { message: 'User has been updated successfully' };
   }
 
