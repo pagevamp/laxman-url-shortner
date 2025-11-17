@@ -10,6 +10,7 @@ const dataSource = new DataSource({
   logging: true,
   entities: [__dirname + '/**/*.entity{.js,.ts}'],
   migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
+  migrationsRun: true,
 });
 
 export default dataSource;
