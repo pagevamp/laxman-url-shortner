@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { RateLimitMiddleware } from './middleware/rate-limit-midddleware';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,6 +12,7 @@ async function bootstrap() {
     credentials: true, // if you need cookies/auth headers
   });
   app.use(new RateLimitMiddleware().use);
+  app.use(cookieParser());
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -19,6 +21,7 @@ async function bootstrap() {
   );
   await app.listen(process.env.PORT ?? 3000);
 }
+
 bootstrap()
   .then(() => {
     console.log('API started');

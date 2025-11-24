@@ -6,7 +6,10 @@ import {
   HttpStatus,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
+
 import { AuthService } from './auth.service';
 import { SignupRequestData } from './dto/signup-user-dto';
 
@@ -27,8 +30,19 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(@Body() loginRequestData: LoginRequestData) {
-    return await this.authService.login(loginRequestData);
+  async login(
+    @Res({ passthrough: true }) res: Response,
+    @Body() loginRequestData: LoginRequestData,
+  ) {
+    const { accessToken } = await this.authService.login(loginRequestData);
+
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: true,
+      maxAge: 3000 * 1000,
+    });
+
+    return { message: 'Logged in successfully' };
   }
 
   @Post('resend-verification')
