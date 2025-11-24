@@ -76,7 +76,7 @@ export class AuthService {
     const payload: EmailVerificationPayload = { email };
     const token = this.jwtService.sign(payload, {
       secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
-      expiresIn: 3600, // 1 hour
+      expiresIn: 3600,
     });
 
     const expiresAt = new Date(Date.now() + 3600 * 1000);
@@ -91,7 +91,6 @@ export class AuthService {
 
     const confirmationUrl = `${process.env.EMAIL_CONFIRMATION_URL}?token=${token}`;
 
-    // Dynamic HTML content
     const html = `
     <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
       <h2 style="color: #4CAF50;">Welcome to Our Application!</h2>
