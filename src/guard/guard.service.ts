@@ -20,7 +20,7 @@ export class GuardService implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
-    const authHeader = request.headers['authorization'];
+    const authHeader = request.cookies.accessToken as string;
 
     if (!authHeader || typeof authHeader !== 'string' || !authHeader.trim()) {
       throw new UnauthorizedException('Please provide a token');
