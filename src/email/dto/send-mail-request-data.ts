@@ -12,4 +12,7 @@ export class SendMailRequestData {
   @IsNotEmpty({ message: 'Text cannot be empty' })
   @Length(1, 5000, { message: 'Text must be between 1 and 5000 characters' })
   text: string;
+
+  @IsNotEmpty({ message: 'HTML content cannot be empty' })
+  html: string;
 }

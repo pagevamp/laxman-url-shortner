@@ -60,6 +60,7 @@ export class AuthService {
   ) {
     const email = resendEmailVerificationRequestData.email;
     const user = await this.userService.findOneByField('email', email);
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -72,13 +73,10 @@ export class AuthService {
       userId: user.id,
     });
 
-    const payload: EmailVerificationPayload = {
-      email,
-    };
-
+    const payload: EmailVerificationPayload = { email };
     const token = this.jwtService.sign(payload, {
       secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
-      expiresIn: 3600,
+      expiresIn: 3600, // 1 hour
     });
 
     const expiresAt = new Date(Date.now() + 3600 * 1000);
@@ -91,17 +89,42 @@ export class AuthService {
 
     await this.emailVerificationRepo.save(emailVerification);
 
-    const url = `${process.env.EMAIL_CONFIRMATION_URL}?token=${token}`;
+    const confirmationUrl = `${process.env.EMAIL_CONFIRMATION_URL}?token=${token}`;
 
-    const text = `Welcome to the application. To confirm the email address, click here: ${url}`;
+    // Dynamic HTML content
+    const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
+      <h2 style="color: #4CAF50;">Welcome to Our Application!</h2>
+      <p>Hello <strong>${user.fullName || email}</strong>,</p>
+      <p>Thank you for registering. Please confirm your email address by clicking the button below:</p>
+      <a 
+        href="${confirmationUrl}" 
+        style="
+          display: inline-block;
+          padding: 10px 20px;
+          background-color: #4CAF50;
+          color: #fff;
+          text-decoration: none;
+          border-radius: 5px;
+          font-weight: bold;
+        "
+      >
+        Confirm Email
+      </a>
+      <p style="margin-top: 20px; font-size: 0.9em; color: #555;">
+        This link will expire in 1 hour. If you did not request this, please ignore this email.
+      </p>
+    </div>
+  `;
 
-    const sendMailRequestdata: SendMailRequestData = {
+    const sendMailRequestData: SendMailRequestData = {
       to: email,
-      subject: 'Email confirmation',
-      text,
+      subject: 'Email Confirmation',
+      text: `Welcome to our application. Confirm your email: ${confirmationUrl}`,
+      html,
     };
 
-    await this.emailService.sendMail(sendMailRequestdata);
+    await this.emailService.sendMail(sendMailRequestData);
 
     return {
       message: EmailMessages.emailSendSuccess,
