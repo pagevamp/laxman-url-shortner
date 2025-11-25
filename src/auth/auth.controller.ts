@@ -38,10 +38,10 @@ export class AuthController {
 
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
-      path: '/',
-      secure: false,
+      // path: '/',
+      secure: true,
       maxAge: 172800000,
-      sameSite: 'lax',
+      sameSite: 'none',
     });
 
     return { message: 'Logged in successfully' };
