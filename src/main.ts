@@ -11,6 +11,7 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true, // if you need cookies/auth headers
   });
+
   app.use(new RateLimitMiddleware().use);
   app.use(cookieParser());
   app.useGlobalPipes(

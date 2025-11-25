@@ -39,9 +39,9 @@ export class AuthController {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       path: '/',
-      secure: true,
+      secure: false,
       maxAge: 172800000,
-      sameSite: 'none',
+      sameSite: 'lax',
     });
 
     return { message: 'Logged in successfully' };
