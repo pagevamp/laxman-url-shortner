@@ -38,8 +38,10 @@ export class AuthController {
 
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      secure: true,
       maxAge: 172800000,
+      sameSite: 'none',
     });
 
     return { message: 'Logged in successfully' };
