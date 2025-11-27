@@ -186,7 +186,12 @@ export class AuthService {
 
     await this.userService.update(user.id, { lastLoginAt: new Date() });
 
-    return { accessToken: await this.jwtService.signAsync(payload) };
+    return {
+      accessToken: await this.jwtService.signAsync(payload, {
+        secret: process.env.JWT_VERIFICATION_TOKEN_SECRET,
+        expiresIn: `${process.env.JWT_TOKEN_EXPIRATION_TIME}s`,
+      }),
+    };
   }
 
   async validateToken(verifyTokenRequestData: {
