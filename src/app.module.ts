@@ -12,6 +12,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { GuardService } from './guard/guard.service';
 import { GuardModule } from './guard/guard.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { RedirectModule } from './redirect/redirect.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     AuthModule,
     EmailModule,
     UrlModule,
+    RedirectModule,
     CronModule,
     AnalyticsModule,
     GuardModule,
